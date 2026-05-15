@@ -3,6 +3,7 @@ from groq import Groq
 from datetime import datetime, timedelta
 import re
 import os
+import json
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="AGENTE MAGNÉTICO", layout="wide")
@@ -69,15 +70,40 @@ st.markdown("""
 
     .hist-item { background: #FFF8FA; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #FFB6C1; }
 
-    .manual-banner {
-        background: linear-gradient(135deg, #FF69B4 0%, #FFB6C1 100%);
-        padding: 14px 22px; border-radius: 14px; margin-bottom: 18px;
-        display: flex; align-items: center; justify-content: space-between;
+    .salvar-box {
+        background: linear-gradient(135deg, #FFF0F5, #FFE4EE);
+        border: 2px solid #FF69B4; border-radius: 14px;
+        padding: 16px 20px; margin-bottom: 16px;
+        font-size: 0.9em; line-height: 1.7; color: #000;
     }
 
     .divider-rosa { border: none; height: 1px; background: linear-gradient(to right, transparent, #FFB6C1, transparent); margin: 20px 0; }
     </style>
 """, unsafe_allow_html=True)
+
+# --- PERSISTÊNCIA LOCAL (JSON) ---
+def gerar_json_sessao() -> str:
+    """Serializa historico + biblioteca em JSON para download."""
+    dados = {
+        'usuario': st.session_state.usuario,
+        'historico': st.session_state.historico,
+        'biblioteca': st.session_state.biblioteca,
+        'resumo_semanal': st.session_state.resumo_semanal,
+        'resumo_gerado_em': st.session_state.resumo_gerado_em,
+        'plano_conquista': st.session_state.plano_conquista,
+        'plano_pessoa': st.session_state.plano_pessoa,
+        'salvo_em': datetime.now().strftime('%d/%m/%Y %H:%M'),
+    }
+    return json.dumps(dados, ensure_ascii=False, indent=2, default=str)
+
+def carregar_json_sessao(dados: dict):
+    """Restaura sessão a partir do JSON carregado."""
+    st.session_state.historico       = dados.get('historico', [])
+    st.session_state.biblioteca      = dados.get('biblioteca', [])
+    st.session_state.resumo_semanal  = dados.get('resumo_semanal', '')
+    st.session_state.resumo_gerado_em= dados.get('resumo_gerado_em', None)
+    st.session_state.plano_conquista = dados.get('plano_conquista', '')
+    st.session_state.plano_pessoa    = dados.get('plano_pessoa', '')
 
 # --- INICIALIZAÇÃO DE ESTADO ---
 defaults = {
@@ -160,78 +186,45 @@ def exportar_historico_txt() -> str:
     return "\n".join(linhas)
 
 def banner_manual():
-    """Exibe botão de download do manual gerado em texto."""
     manual_txt = """AGENTE MAGNÉTICO — Manual Completo de Funcionalidades
 Versão Milhão 2026
 ======================================================
 
 🏠 HOME — Painel Principal
-Tela inicial com estatísticas em tempo real: total de análises, interesse médio,
-taxa de conversas quentes e aberturas salvas. Modo Confiança (respostas mais diretas
-e dominantes), Modo Dark (visual escuro), guia rápido de todas as abas e últimas 5 análises.
+Tela inicial com estatísticas em tempo real.
 
 ⚡ RESPOSTA RÁPIDA
 Gera 3 opções de resposta imediata para qualquer mensagem recebida.
-Selecione a situação, informe sinais fora do chat (opcional) e cole a mensagem.
-A IA entrega 3 opções com vibes diferentes e explica o efeito de cada uma.
 
 💬 TURBINAR MENSAGEM
-Você tem uma ideia do que quer dizer para a pessoa que está conquistando —
-a IA reescreve com gatilhos poderosos. Informe para quem é a mensagem,
-o contexto, a vibe desejada e sua ideia inicial. A IA mostra o problema
-da versão original e entrega a nova versão turbinada.
+A IA reescreve sua mensagem com gatilhos poderosos.
 
 🧠 ANALISAR CONVERSA
-Diagnóstico completo: cole os balões da conversa e receba leitura do nível
-de interesse (0-10), energia emocional (fria/quente), posição (passivo/dominante)
-e qual é o próximo movimento ideal.
+Diagnóstico completo de uma conversa inteira.
 
 🎭 ROLEPLAY — TREINE ANTES DE ENVIAR
 Simule uma conversa com a pessoa antes de falar de verdade.
-Descreva o perfil e personalidade dela, escolha a situação inicial,
-e treine quantas mensagens quiser. A IA interpreta a pessoa de forma realista.
-Ao encerrar, receba avaliação com nota, acertos, erros e o que melhorar.
 
 📚 BIBLIOTECA DE ABERTURAS
-Banco pessoal de mensagens de abertura salvas por vibe e situação.
-Gere 5 aberturas em um clique, salve as melhores e acesse a qualquer momento.
+Banco pessoal de mensagens de abertura salvas.
 
 📸 ANÁLISE DE PERFIL E BIO
-Cole a bio, descreva fotos e comportamentos. A IA entrega: perfil de personalidade,
-gatilhos que funcionam, o que evitar, abertura ideal personalizada e estratégia de conquista.
+Leitura de personalidade + abordagem ideal.
 
 ⚔️ COMPARAR DUAS CONVERSAS
-Analise duas conversas lado a lado. A IA avalia cada uma individualmente
-(interesse, energia, próximo passo) e aponta qual tem mais potencial e por quê.
+Analise duas conversas lado a lado.
 
 🗓️ PLANO DE CONQUISTA — 7 DIAS
 Roteiro personalizado de ações para os próximos 7 dias.
-Para cada dia: objetivo, ação específica, melhor horário e o que evitar.
-Disponível para download em TXT.
 
 🚩 DETECTOR DE RED FLAGS
-Identifica sinais de desinteresse, jogo mental ou comportamento problemático.
-Resultado em vermelho quando há alertas sérios.
-Inclui diagnóstico geral e recomendação clara do que fazer.
+Identifica sinais de desinteresse ou comportamento problemático.
 
 📈 PROGRESSO
-Histórico completo de todas as análises com filtros por tipo,
-sistema de favoritos, exportação em TXT e remoção individual.
+Histórico completo com filtros, favoritos e exportação.
 
 📋 RESUMO SEMANAL
-Relatório gerado por IA: conquistas da semana, padrão de erro mais comum,
-evolução estimada, foco para a próxima semana e dica personalizada.
-
-======================================================
-COMO COMEÇAR
-1. Acesse o app e insira seu nome e chave API da Groq (grátis em console.groq.com).
-2. Clique em DESBLOQUEAR ACESSO.
-3. Comece pela aba RESPOSTA RÁPIDA para resultado imediato.
-4. Use ANALISAR para entender melhor conversas importantes.
-5. Treine no ROLEPLAY antes de mandar mensagens decisivas.
-6. Consulte o RESUMO SEMANAL para acompanhar sua evolução.
-
-"Enquanto a maioria tenta adivinhar o que dizer... você vai saber exatamente como agir."
+Relatório gerado por IA com análise da sua evolução.
 
 © 2026 Agente Magnético — Treinador Social de Elite
 """
@@ -242,6 +235,53 @@ COMO COMEÇAR
         mime="text/plain",
         use_container_width=False
     )
+
+# ── BARRA LATERAL DE SALVAR/CARREGAR ─────────────────────────
+def barra_salvar():
+    """Exibe botão de salvar + uploader para carregar — sempre visível no topo do app."""
+    nome_usuario = st.session_state.usuario.lower().replace(' ', '_') or 'minha_sessao'
+    json_dados = gerar_json_sessao()
+
+    col_info, col_btn, col_upload = st.columns([3, 2, 2])
+    with col_info:
+        total, media, _ = calcular_stats()
+        st.markdown(
+            f"<div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;"
+            f"padding:10px 14px;font-size:0.84em;color:#000;line-height:1.6;'>"
+            f"💾 <strong>Salve sempre no seu computador</strong> para não perder nada.<br>"
+            f"<span style='color:#888;font-size:0.88em;'>{total} análises · interesse médio {media}/10</span>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+    with col_btn:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.download_button(
+            label="💾 SALVAR NO COMPUTADOR (.json)",
+            data=json_dados,
+            file_name=f"agente_magnetico_{nome_usuario}.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+    with col_upload:
+        st.markdown("<br>", unsafe_allow_html=True)
+        arq = st.file_uploader(
+            "📥 Carregar sessão salva",
+            type=["json"],
+            key="upload_sessao",
+            label_visibility="collapsed",
+            help="Selecione o arquivo .json que você salvou antes"
+        )
+        if arq is not None:
+            try:
+                dados_imp = json.load(arq)
+                carregar_json_sessao(dados_imp)
+                nome_imp = dados_imp.get('usuario', 'sua sessão')
+                st.success(f"✅ Sessão de **{nome_imp}** carregada!")
+                st.rerun()
+            except Exception:
+                st.error("Arquivo inválido. Use o .json gerado pelo Agente Magnético.")
+
+    st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
 
 # ============================================================
 # TELA: LOGIN
@@ -255,15 +295,40 @@ if st.session_state.etapa == "Login":
         st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
         nome = st.text_input("Seu Nome:")
         chave = st.text_input("Sua Chave API da Groq:", type="password")
+
+        # ── CARREGAR SESSÃO SALVA NA TELA DE LOGIN ────────────
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("**📥 Já tem uma sessão salva? Carregue aqui:**")
+        st.caption("Selecione o arquivo .json que você salvou antes — seu histórico e biblioteca voltam completos.")
+        arq_login = st.file_uploader("", type=["json"], key="upload_login", label_visibility="collapsed")
+        if arq_login is not None:
+            try:
+                dados_login = json.load(arq_login)
+                nome_login = dados_login.get('usuario', '')
+                st.success(f"✅ Sessão de **{nome_login}** reconhecida! Clique em Desbloquear Acesso para entrar.")
+                # pré-preenche o nome
+                if nome_login and not nome:
+                    nome = nome_login
+            except Exception:
+                st.error("Arquivo inválido.")
+
+        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("✨ DESBLOQUEAR ACESSO"):
             if nome and chave:
                 st.session_state.usuario = nome
                 st.session_state.api_key = chave
+                # se tinha arquivo carregado, restaura a sessão
+                if arq_login is not None:
+                    try:
+                        dados_login = json.load(arq_login)
+                        carregar_json_sessao(dados_login)
+                    except Exception:
+                        pass
                 st.session_state.etapa = "App"
                 st.rerun()
             else:
                 st.warning("Preencha nome e chave API.")
-        st.markdown("<br>", unsafe_allow_html=True)
+
         st.caption("🔑 Não tem chave Groq? Crie grátis em console.groq.com")
 
 # ============================================================
@@ -284,6 +349,9 @@ elif st.session_state.etapa == "App":
 
     # BANNER DO MANUAL
     banner_manual()
+
+    # ── BARRA DE SALVAR — SEMPRE VISÍVEL ─────────────────────
+    barra_salvar()
 
     # NAVBAR
     cols = st.columns(12)
@@ -499,15 +567,10 @@ elif st.session_state.etapa == "App":
                 ])
             perfil = st.text_area(
                 "Descreva o perfil e a personalidade dessa pessoa:",
-                placeholder=(
-                    "ex: mulher de 28 anos, independente, irônica, gosta de viagens, "
-                    "responde com bom humor mas demora um pouco, não gosta de papo reto logo de cara..."
-                ),
+                placeholder="ex: mulher de 28 anos, independente, irônica, gosta de viagens...",
                 height=120,
-                help="Quanto mais detalhes você der, mais realista será a simulação."
             )
-
-            st.info("💡 Dica: descreva como essa pessoa costuma se comunicar, o que ela gosta, como ela reage. A IA vai interpretar ela de forma realista.")
+            st.info("💡 Dica: descreva como essa pessoa costuma se comunicar, o que ela gosta, como ela reage.")
 
             if st.button("🎬 INICIAR SIMULAÇÃO"):
                 if perfil.strip():
@@ -528,7 +591,6 @@ elif st.session_state.etapa == "App":
                 unsafe_allow_html=True
             )
 
-            # Histórico da conversa
             for msg in st.session_state.roleplay_hist:
                 if msg['role'] == 'user':
                     st.markdown(f"**Você:** {msg['content']}")
@@ -551,12 +613,8 @@ elif st.session_state.etapa == "App":
                                 f"Você está interpretando {nome_sim} em uma simulação de conversa para treinamento social. "
                                 f"Perfil detalhado: {st.session_state.roleplay_perfil}. "
                                 f"Situação: {st.session_state.roleplay_situacao}. "
-                                f"REGRAS OBRIGATÓRIAS: "
-                                f"1. Responda APENAS como {nome_sim} responderia, de forma realista e natural. "
-                                f"2. Nunca quebre o personagem. "
-                                f"3. Nunca dê conselhos ou saia do papel. "
-                                f"4. Use o estilo de escrita que a pessoa descrita usaria (informal, curto, com emojis se o perfil indicar, etc.). "
-                                f"5. Reaja de forma coerente com a personalidade descrita."
+                                f"REGRAS: Responda APENAS como {nome_sim} responderia, de forma realista. "
+                                f"Nunca quebre o personagem. Nunca dê conselhos."
                             )
                             try:
                                 client = Groq(api_key=st.session_state.api_key)
@@ -666,7 +724,7 @@ elif st.session_state.etapa == "App":
                         f"Forneça:\n1. 🧬 PERFIL DE PERSONALIDADE\n2. ⚡ GATILHOS que funcionam\n"
                         f"3. 🚫 O QUE EVITAR\n4. 💬 ABERTURA IDEAL personalizada\n5. 🎯 ESTRATÉGIA DE CONQUISTA"
                     )
-                    res = mentor_milhao(prompt, sistema_extra="Especialista em leitura de perfis sociais e psicologia do comportamento online.")
+                    res = mentor_milhao(prompt, sistema_extra="Especialista em leitura de perfis sociais.")
                     salvar_historico("📸 Perfil", bio[:60], res)
                     st.markdown(f"<div class='card'>{res}</div>", unsafe_allow_html=True)
             else:
@@ -714,7 +772,7 @@ elif st.session_state.etapa == "App":
 
         nome_alvo = st.text_input("Nome ou apelido da pessoa:", placeholder="ex: Ana")
         contexto_alvo = st.text_area("O que você sabe sobre ela/ele e o contexto?",
-            placeholder="ex: se conheceram na academia, já trocaram mensagens, ela é extrovertida...", height=100)
+            placeholder="ex: se conheceram na academia, já trocaram mensagens...", height=100)
         estagio = st.selectbox("Em que estágio vocês estão?", [
             "Nunca conversamos — vou abordar pela primeira vez",
             "Já conversamos pouco, mas a conversa esfriou",
@@ -733,11 +791,10 @@ elif st.session_state.etapa == "App":
                         f"- 🎯 OBJETIVO DO DIA\n- 📲 AÇÃO ESPECÍFICA\n- ⏰ MELHOR HORÁRIO\n- ⚠️ O QUE EVITAR\n\n"
                         f"Seja prático. Ações concretas, nada de teoria."
                     )
-                    res = mentor_milhao(prompt, sistema_extra="Coach especializado em estratégias de relacionamento. Seja prático e direto.")
+                    res = mentor_milhao(prompt, sistema_extra="Coach especializado em estratégias de relacionamento.")
                     st.session_state.plano_conquista = res
                     st.session_state.plano_pessoa = nome_alvo or "Pessoa de interesse"
                     st.markdown(f"<div class='card-dark'>{res}</div>", unsafe_allow_html=True)
-
             else:
                 st.warning("Descreva o contexto antes de gerar o plano.")
 
@@ -755,7 +812,7 @@ elif st.session_state.etapa == "App":
 
         chat_rf = st.text_area("💬 Cole a conversa aqui:", height=220)
         comportamentos_rf = st.text_area("👁️ Comportamentos fora do chat (opcional):",
-            placeholder="ex: some por dias, responde só quando quer, quente e fria sem motivo...", height=80)
+            placeholder="ex: some por dias, responde só quando quer...", height=80)
 
         if st.button("🚩 ANALISAR RED FLAGS"):
             if chat_rf.strip():
@@ -767,7 +824,7 @@ elif st.session_state.etapa == "App":
                         f"3. ✅ SINAIS POSITIVOS\n4. 🧠 DIAGNÓSTICO GERAL\n5. 💡 RECOMENDAÇÃO\n\n"
                         f"Seja honesto mesmo que difícil de ouvir."
                     )
-                    res = mentor_milhao(prompt, sistema_extra="Analista de padrões de comportamento em relacionamentos. Seja direto e honesto.")
+                    res = mentor_milhao(prompt, sistema_extra="Analista de padrões de comportamento. Seja direto e honesto.")
                     salvar_historico("🚩 Red Flags", chat_rf[:80], res)
                     tem_flags = "red flag" in res.lower() or "🚩" in res
                     card = "card-vermelho" if tem_flags else "card"
