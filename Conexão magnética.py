@@ -238,48 +238,30 @@ Relatório gerado por IA com análise da sua evolução.
 
 # ── BARRA LATERAL DE SALVAR/CARREGAR ─────────────────────────
 def barra_salvar():
-    """Exibe botão de salvar + uploader para carregar — sempre visível no topo do app."""
+    """Botão discreto para salvar dados no computador — aparece no topo do app."""
     nome_usuario = st.session_state.usuario.lower().replace(' ', '_') or 'minha_sessao'
     json_dados = gerar_json_sessao()
+    total, media, _ = calcular_stats()
 
-    col_info, col_btn, col_upload = st.columns([3, 2, 2])
+    col_info, col_btn = st.columns([4, 2])
     with col_info:
-        total, media, _ = calcular_stats()
         st.markdown(
             f"<div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;"
             f"padding:10px 14px;font-size:0.84em;color:#000;line-height:1.6;'>"
-            f"💾 <strong>Salve sempre no seu computador</strong> para não perder nada.<br>"
-            f"<span style='color:#888;font-size:0.88em;'>{total} análises · interesse médio {media}/10</span>"
+            f"💾 <strong>Antes de sair, salve seus dados no computador</strong> — assim você não perde nada se o servidor reiniciar.<br>"
+            f"<span style='color:#888;font-size:0.88em;'>{total} análises registradas · interesse médio {media}/10</span>"
             f"</div>",
             unsafe_allow_html=True
         )
     with col_btn:
         st.markdown("<br>", unsafe_allow_html=True)
         st.download_button(
-            label="💾 SALVAR NO COMPUTADOR (.json)",
+            label="💾 SALVAR MEUS DADOS (.json)",
             data=json_dados,
             file_name=f"agente_magnetico_{nome_usuario}.json",
             mime="application/json",
             use_container_width=True,
         )
-    with col_upload:
-        st.markdown("<br>", unsafe_allow_html=True)
-        arq = st.file_uploader(
-            "📥 Carregar sessão salva",
-            type=["json"],
-            key="upload_sessao",
-            label_visibility="collapsed",
-            help="Selecione o arquivo .json que você salvou antes"
-        )
-        if arq is not None:
-            try:
-                dados_imp = json.load(arq)
-                carregar_json_sessao(dados_imp)
-                nome_imp = dados_imp.get('usuario', 'sua sessão')
-                st.success(f"✅ Sessão de **{nome_imp}** carregada!")
-                st.rerun()
-            except Exception:
-                st.error("Arquivo inválido. Use o .json gerado pelo Agente Magnético.")
 
     st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
 
@@ -296,34 +278,42 @@ if st.session_state.etapa == "Login":
         nome = st.text_input("Seu Nome:")
         chave = st.text_input("Sua Chave API da Groq:", type="password")
 
-        # ── CARREGAR SESSÃO SALVA NA TELA DE LOGIN ────────────
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("**📥 Já tem uma sessão salva? Carregue aqui:**")
-        st.caption("Selecione o arquivo .json que você salvou antes — seu histórico e biblioteca voltam completos.")
-        arq_login = st.file_uploader("", type=["json"], key="upload_login", label_visibility="collapsed")
+
+        # ── UPLOADER: carrega dados se o servidor tiver zerado ──
+        tem_dados = len(st.session_state.get('historico', [])) > 0 or len(st.session_state.get('biblioteca', [])) > 0
+        if not tem_dados:
+            st.markdown("""<div style="background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
+            padding:12px 16px;font-size:0.86em;color:#000;line-height:1.7;margin-bottom:10px;">
+            📥 <strong>Seus dados sumiram?</strong> Isso acontece quando o servidor reinicia.<br>
+            Selecione abaixo o arquivo <strong>.json</strong> que você salvou antes — tudo volta como era.
+            </div>""", unsafe_allow_html=True)
+            arq_login = st.file_uploader("Carregar meus dados salvos (.json):", type=["json"], key="upload_login")
+        else:
+            arq_login = None
+            st.markdown(f"""<div style="background:#F0FFF4;border:1px solid #86EFAC;border-radius:10px;
+            padding:10px 14px;font-size:0.84em;color:#000;margin-bottom:10px;">
+            ✅ <strong>Seus dados estão no servidor.</strong> É só entrar normalmente.
+            </div>""", unsafe_allow_html=True)
+
         if arq_login is not None:
             try:
                 dados_login = json.load(arq_login)
                 nome_login = dados_login.get('usuario', '')
-                st.success(f"✅ Sessão de **{nome_login}** reconhecida! Clique em Desbloquear Acesso para entrar.")
-                # pré-preenche o nome
-                if nome_login and not nome:
-                    nome = nome_login
+                st.success(f"✅ Dados de **{nome_login}** reconhecidos! Clique em Desbloquear para entrar.")
             except Exception:
                 st.error("Arquivo inválido.")
+                dados_login = None
+                arq_login = None
+        else:
+            dados_login = None
 
-        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("✨ DESBLOQUEAR ACESSO"):
             if nome and chave:
                 st.session_state.usuario = nome
                 st.session_state.api_key = chave
-                # se tinha arquivo carregado, restaura a sessão
-                if arq_login is not None:
-                    try:
-                        dados_login = json.load(arq_login)
-                        carregar_json_sessao(dados_login)
-                    except Exception:
-                        pass
+                if dados_login:
+                    carregar_json_sessao(dados_login)
                 st.session_state.etapa = "App"
                 st.rerun()
             else:
