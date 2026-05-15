@@ -274,6 +274,18 @@ if st.session_state.etapa == "Login":
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.title("💎 AGENTE MAGNÉTICO")
         st.markdown("**Seu Treinador Social de Elite com Inteligência Artificial**")
+        st.markdown("""<div style="background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
+        padding:10px 16px;margin:10px 0 16px 0;font-size:0.88em;color:#000;line-height:1.6;">
+        🔒 <strong>ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS</strong><br>
+        🔗 <a href="https://www.quizmaispremios.com.br" target="_blank"
+        style="color:#FF69B4;font-weight:600;text-decoration:none;">www.quizmaispremios.com.br</a>
+        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div style="background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
+        padding:10px 16px;margin:10px 0 16px 0;font-size:0.88em;color:#000;line-height:1.6;">
+        🔒 <strong>ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS</strong><br>
+        🔗 <a href="https://www.quizmaispremios.com.br" target="_blank"
+        style="color:#FF69B4;font-weight:600;text-decoration:none;">www.quizmaispremios.com.br</a>
+        </div>""", unsafe_allow_html=True)
         st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
         nome = st.text_input("Seu Nome:")
         chave = st.text_input("Sua Chave API da Groq:", type="password")
@@ -319,7 +331,7 @@ if st.session_state.etapa == "Login":
             else:
                 st.warning("Preencha nome e chave API.")
 
-        st.caption("🔑 Não tem chave Groq? Crie grátis em console.groq.com")
+        st.markdown("🔑 Não tem chave Groq? Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#FF69B4;font-weight:600;'>console.groq.com/keys</a>", unsafe_allow_html=True)
 
 # ============================================================
 # TELA: APP
