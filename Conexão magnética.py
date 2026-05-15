@@ -396,13 +396,11 @@ elif st.session_state.etapa == "App":
         # ── AVISO SE DADOS SUMIRAM — uploader direto na Home ──
         if total == 0 and len(st.session_state.biblioteca) == 0:
             st.markdown("""<div style="background:#FEF3C7;border:2px solid #F59E0B;border-radius:12px;
-            padding:14px 18px;margin-bottom:8px;color:#000;font-size:0.9em;line-height:1.7;">
-            ⚠️ <strong>Seus dados não estão carregados.</strong><br>
-            O servidor reiniciou e a memória foi apagada — isso é normal.<br>
-            Selecione abaixo o arquivo <strong>.json</strong> que você salvou antes e tudo volta como era. 👇
+            padding:12px 18px;margin-bottom:4px;color:#000;font-size:0.9em;font-weight:600;">
+            ⚠️ Seus dados não estão mais no servidor.
             </div>""", unsafe_allow_html=True)
             arq_home = st.file_uploader(
-                "📥 Carregar meus dados salvos (.json):",
+                "Carregar meus dados salvos (.json):",
                 type=["json"],
                 key="upload_home"
             )
@@ -410,7 +408,7 @@ elif st.session_state.etapa == "App":
                 try:
                     dados_home = json.load(arq_home)
                     carregar_json_sessao(dados_home)
-                    st.success("✅ Dados recuperados com sucesso! Sua sessão está completa.")
+                    st.success("✅ Dados recuperados! Sua sessão está completa.")
                     st.rerun()
                 except Exception:
                     st.error("Arquivo inválido. Use o .json gerado pelo Agente Magnético.")
