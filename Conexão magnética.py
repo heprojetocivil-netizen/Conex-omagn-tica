@@ -280,13 +280,6 @@ if st.session_state.etapa == "Login":
         🔗 <a href="https://www.quizmaispremios.com.br" target="_blank"
         style="color:#FF69B4;font-weight:600;text-decoration:none;">www.quizmaispremios.com.br</a>
         </div>""", unsafe_allow_html=True)
-        st.markdown("""<div style="background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
-        padding:10px 16px;margin:10px 0 16px 0;font-size:0.88em;color:#000;line-height:1.6;">
-        🔒 <strong>ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS</strong><br>
-        🔗 <a href="https://www.quizmaispremios.com.br" target="_blank"
-        style="color:#FF69B4;font-weight:600;text-decoration:none;">www.quizmaispremios.com.br</a>
-        </div>""", unsafe_allow_html=True)
-        st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
         nome = st.text_input("Seu Nome:")
         chave = st.text_input("Sua Chave API da Groq:", type="password")
 
@@ -399,6 +392,30 @@ elif st.session_state.etapa == "App":
         st.markdown("<br>", unsafe_allow_html=True)
         total, media, taxa = calcular_stats()
         favs = sum(1 for x in st.session_state.historico if x.get('favoritado'))
+
+        # ── AVISO SE DADOS SUMIRAM — uploader direto na Home ──
+        if total == 0 and len(st.session_state.biblioteca) == 0:
+            st.markdown("""<div style="background:#FEF3C7;border:2px solid #F59E0B;border-radius:12px;
+            padding:14px 18px;margin-bottom:8px;color:#000;font-size:0.9em;line-height:1.7;">
+            ⚠️ <strong>Seus dados não estão carregados.</strong><br>
+            O servidor reiniciou e a memória foi apagada — isso é normal.<br>
+            Selecione abaixo o arquivo <strong>.json</strong> que você salvou antes e tudo volta como era. 👇
+            </div>""", unsafe_allow_html=True)
+            arq_home = st.file_uploader(
+                "📥 Carregar meus dados salvos (.json):",
+                type=["json"],
+                key="upload_home"
+            )
+            if arq_home is not None:
+                try:
+                    dados_home = json.load(arq_home)
+                    carregar_json_sessao(dados_home)
+                    st.success("✅ Dados recuperados com sucesso! Sua sessão está completa.")
+                    st.rerun()
+                except Exception:
+                    st.error("Arquivo inválido. Use o .json gerado pelo Agente Magnético.")
+            st.markdown("<br>", unsafe_allow_html=True)
+
         c1, c2, c3, c4, c5 = st.columns(5)
         dados_stats = [
             (total, "Análises feitas"), (media, "Interesse médio"),
