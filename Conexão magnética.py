@@ -70,40 +70,66 @@ st.markdown("""
 
     .hist-item { background: #FFF8FA; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; border-left: 4px solid #FFB6C1; }
 
-    .salvar-box {
-        background: linear-gradient(135deg, #FFF0F5, #FFE4EE);
-        border: 2px solid #FF69B4; border-radius: 14px;
-        padding: 16px 20px; margin-bottom: 16px;
-        font-size: 0.9em; line-height: 1.7; color: #000;
+    .perfil-btn>button {
+        background: linear-gradient(135deg, #FF69B4, #FFB6C1) !important;
+        color: white !important; font-weight: 700 !important;
+        border-radius: 12px !important; height: 3em !important;
+        font-size: 0.95em !important;
     }
 
     .divider-rosa { border: none; height: 1px; background: linear-gradient(to right, transparent, #FFB6C1, transparent); margin: 20px 0; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- PERSISTÊNCIA LOCAL (JSON) ---
+# ─────────────────────────────────────────────
+# CACHE — persiste enquanto servidor não reiniciar
+# ─────────────────────────────────────────────
+@st.cache_resource
+def get_cache_magnetico():
+    return {"perfis": {}}  # {usuario: dados}
+
+_cache = get_cache_magnetico()
+
+# ─────────────────────────────────────────────
+# PERSISTÊNCIA LOCAL (JSON)
+# ─────────────────────────────────────────────
 def gerar_json_sessao() -> str:
-    """Serializa historico + biblioteca em JSON para download."""
     dados = {
-        'usuario': st.session_state.usuario,
-        'historico': st.session_state.historico,
-        'biblioteca': st.session_state.biblioteca,
-        'resumo_semanal': st.session_state.resumo_semanal,
+        'usuario':          st.session_state.usuario,
+        'historico':        st.session_state.historico,
+        'biblioteca':       st.session_state.biblioteca,
+        'resumo_semanal':   st.session_state.resumo_semanal,
         'resumo_gerado_em': st.session_state.resumo_gerado_em,
-        'plano_conquista': st.session_state.plano_conquista,
-        'plano_pessoa': st.session_state.plano_pessoa,
-        'salvo_em': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'plano_conquista':  st.session_state.plano_conquista,
+        'plano_pessoa':     st.session_state.plano_pessoa,
+        'salvo_em':         datetime.now().strftime('%d/%m/%Y %H:%M'),
     }
     return json.dumps(dados, ensure_ascii=False, indent=2, default=str)
 
 def carregar_json_sessao(dados: dict):
-    """Restaura sessão a partir do JSON carregado."""
-    st.session_state.historico       = dados.get('historico', [])
-    st.session_state.biblioteca      = dados.get('biblioteca', [])
-    st.session_state.resumo_semanal  = dados.get('resumo_semanal', '')
-    st.session_state.resumo_gerado_em= dados.get('resumo_gerado_em', None)
-    st.session_state.plano_conquista = dados.get('plano_conquista', '')
-    st.session_state.plano_pessoa    = dados.get('plano_pessoa', '')
+    st.session_state.historico        = dados.get('historico', [])
+    st.session_state.biblioteca       = dados.get('biblioteca', [])
+    st.session_state.resumo_semanal   = dados.get('resumo_semanal', '')
+    st.session_state.resumo_gerado_em = dados.get('resumo_gerado_em', None)
+    st.session_state.plano_conquista  = dados.get('plano_conquista', '')
+    st.session_state.plano_pessoa     = dados.get('plano_pessoa', '')
+
+def salvar_perfil_cache(usuario: str):
+    _cache["perfis"][usuario] = {
+        'usuario':          st.session_state.usuario,
+        'historico':        st.session_state.historico,
+        'biblioteca':       st.session_state.biblioteca,
+        'resumo_semanal':   st.session_state.resumo_semanal,
+        'resumo_gerado_em': st.session_state.resumo_gerado_em,
+        'plano_conquista':  st.session_state.plano_conquista,
+        'plano_pessoa':     st.session_state.plano_pessoa,
+    }
+
+def perfis_salvos() -> list:
+    return list(_cache["perfis"].keys())
+
+def carregar_perfil_cache(usuario: str) -> dict | None:
+    return _cache["perfis"].get(usuario)
 
 # --- INICIALIZAÇÃO DE ESTADO ---
 defaults = {
@@ -236,11 +262,14 @@ Relatório gerado por IA com análise da sua evolução.
         use_container_width=False
     )
 
-# ── BARRA LATERAL DE SALVAR/CARREGAR ─────────────────────────
+# ── BARRA DE SALVAR ───────────────────────────────────────────
 def barra_salvar():
-    """Botão discreto para salvar dados no computador — aparece no topo do app."""
+    """Salva no cache automaticamente + botão de download para o computador."""
+    # salva no cache a cada renderização
+    salvar_perfil_cache(st.session_state.usuario)
+
     nome_usuario = st.session_state.usuario.lower().replace(' ', '_') or 'minha_sessao'
-    json_dados = gerar_json_sessao()
+    json_dados   = gerar_json_sessao()
     total, media, _ = calcular_stats()
 
     col_info, col_btn = st.columns([4, 2])
@@ -262,7 +291,6 @@ def barra_salvar():
             mime="application/json",
             use_container_width=True,
         )
-
     st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
 
 # ============================================================
@@ -276,42 +304,64 @@ if st.session_state.etapa == "Login":
         st.markdown("**Seu Treinador Social de Elite com Inteligência Artificial**")
         st.markdown("""<div style="background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
         padding:10px 16px;margin:10px 0 16px 0;font-size:0.88em;color:#000;line-height:1.6;">
-        🔒 <strong>ACESSO RESTRITO A ASSOCIADOS DO QUIZ MAIS PRÊMIOS</strong><br>
-        🔗 <a href="https://www.quizmaispremios.com.br" target="_blank"
-        style="color:#FF69B4;font-weight:600;text-decoration:none;">www.quizmaispremios.com.br</a>
+        🔒 <strong>ACESSO RESTRITO A ASSOCIADOS DO QUIZ COM PRÊMIOS</strong><br>
+        🔗 <a href="https://quizcompremios.com.br/" target="_blank"
+        style="color:#FF69B4;font-weight:600;text-decoration:none;">quizcompremios.com.br</a>
         </div>""", unsafe_allow_html=True)
-        nome = st.text_input("Seu Nome:")
-        chave = st.text_input("Sua Chave API da Groq:", type="password")
+        st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        # ── PERFIS SALVOS NO SERVIDOR ─────────────────────────
+        perfis = perfis_salvos()
+        if perfis:
+            st.markdown("#### 💎 Agente Magnético — clique para acessar seus dados")
+            st.caption("Seus dados estão no servidor. Um clique e você entra.")
+            chave_rapida = st.text_input("🔑 Sua Chave API da Groq:", type="password", key="chave_rapida")
+            for nome_p in perfis:
+                dados_p  = carregar_perfil_cache(nome_p)
+                total_p  = len(dados_p.get('historico', [])) if dados_p else 0
+                bib_p    = len(dados_p.get('biblioteca', [])) if dados_p else 0
+                st.markdown('<div class="perfil-btn">', unsafe_allow_html=True)
+                if st.button(
+                    f"💎 {nome_p}  —  {total_p} análises · {bib_p} aberturas salvas",
+                    key=f"perfil_{nome_p}",
+                    use_container_width=True
+                ):
+                    if not chave_rapida.strip():
+                        st.warning("Cole sua chave API acima antes de entrar.")
+                    else:
+                        st.session_state.usuario = nome_p
+                        st.session_state.api_key = chave_rapida
+                        carregar_json_sessao(dados_p)
+                        st.session_state.etapa = "App"
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("<hr class='divider-rosa'>", unsafe_allow_html=True)
+            st.markdown("**Ou entre com outro nome:**")
 
-        # ── UPLOADER: carrega dados se o servidor tiver zerado ──
-        tem_dados = len(st.session_state.get('historico', [])) > 0 or len(st.session_state.get('biblioteca', [])) > 0
-        if not tem_dados:
+        # ── FORMULÁRIO DE ENTRADA ─────────────────────────────
+        nome  = st.text_input("Seu Nome:")
+        chave = st.text_input("Sua Chave API da Groq:", type="password", key="chave_nova")
+
+        # ── UPLOADER SE NÃO TEM PERFIS NO SERVIDOR ───────────
+        if not perfis:
             st.markdown("""<div style="background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
-            padding:12px 16px;font-size:0.86em;color:#000;line-height:1.7;margin-bottom:10px;">
+            padding:12px 16px;font-size:0.86em;color:#000;line-height:1.7;margin:10px 0;">
             📥 <strong>Seus dados sumiram?</strong> Isso acontece quando o servidor reinicia.<br>
             Selecione abaixo o arquivo <strong>.json</strong> que você salvou antes — tudo volta como era.
             </div>""", unsafe_allow_html=True)
             arq_login = st.file_uploader("Carregar meus dados salvos (.json):", type=["json"], key="upload_login")
         else:
             arq_login = None
-            st.markdown(f"""<div style="background:#F0FFF4;border:1px solid #86EFAC;border-radius:10px;
-            padding:10px 14px;font-size:0.84em;color:#000;margin-bottom:10px;">
-            ✅ <strong>Seus dados estão no servidor.</strong> É só entrar normalmente.
-            </div>""", unsafe_allow_html=True)
 
+        dados_login = None
         if arq_login is not None:
             try:
                 dados_login = json.load(arq_login)
-                nome_login = dados_login.get('usuario', '')
+                nome_login  = dados_login.get('usuario', '')
                 st.success(f"✅ Dados de **{nome_login}** reconhecidos! Clique em Desbloquear para entrar.")
             except Exception:
                 st.error("Arquivo inválido.")
                 dados_login = None
-                arq_login = None
-        else:
-            dados_login = None
 
         if st.button("✨ DESBLOQUEAR ACESSO"):
             if nome and chave:
@@ -393,7 +443,7 @@ elif st.session_state.etapa == "App":
         total, media, taxa = calcular_stats()
         favs = sum(1 for x in st.session_state.historico if x.get('favoritado'))
 
-        # ── AVISO SE DADOS SUMIRAM — uploader direto na Home ──
+        # ── AVISO SE DADOS SUMIRAM ────────────────────────────
         if total == 0 and len(st.session_state.biblioteca) == 0:
             st.markdown("""<div style="background:#FEF3C7;border:2px solid #F59E0B;border-radius:12px;
             padding:12px 18px;margin-bottom:4px;color:#000;font-size:0.9em;font-weight:600;">
@@ -408,6 +458,7 @@ elif st.session_state.etapa == "App":
                 try:
                     dados_home = json.load(arq_home)
                     carregar_json_sessao(dados_home)
+                    salvar_perfil_cache(st.session_state.usuario)
                     st.success("✅ Dados recuperados! Sua sessão está completa.")
                     st.rerun()
                 except Exception:
@@ -493,17 +544,15 @@ elif st.session_state.etapa == "App":
         st.header("💬 Turbinar Mensagem")
         st.markdown("Você tem uma ideia do que quer dizer — a IA reescreve com gatilhos poderosos.")
 
-        nome_destino = st.text_input("👤 Para quem é a mensagem?",
-            placeholder="ex: Ana, o cara do app, a menina do gym...")
-        contexto_destino = st.text_input("📌 O que você sabe sobre essa pessoa? (opcional)",
-            placeholder="ex: extrovertida, gosta de humor, responde rápido...")
+        nome_destino     = st.text_input("👤 Para quem é a mensagem?", placeholder="ex: Ana, o cara do app...")
+        contexto_destino = st.text_input("📌 O que você sabe sobre essa pessoa? (opcional)", placeholder="ex: extrovertida, gosta de humor...")
         situacao = st.selectbox("📍 Situação:", [
             "Primeiro contato", "Depois de um tempo sem falar",
             "Após uma briga ou esfriamento", "Marcando um encontro", "Flerte avançado",
         ])
         vibe = st.select_slider("Qual vibe você quer criar?",
             options=["Divertida", "Leve", "Provocante", "Profunda", "Dominante"])
-        minha_msg = st.text_area("✏️ Sua ideia inicial (o que você quer dizer):", height=120)
+        minha_msg  = st.text_area("✏️ Sua ideia inicial (o que você quer dizer):", height=120)
         salvar_bib = st.checkbox("📚 Salvar resultado na Biblioteca de Aberturas")
 
         if st.button("🚀 TURBINAR PARA O MODO MILHÃO"):
@@ -512,11 +561,10 @@ elif st.session_state.etapa == "App":
                     contexto_pessoa = f" Contexto sobre {nome_destino}: {contexto_destino}." if contexto_destino.strip() else ""
                     prompt = (
                         f"Situação: {situacao}.\n"
-                        f"Destinatário da mensagem: {nome_destino or 'a pessoa de interesse'}.{contexto_pessoa}\n"
-                        f"O usuário quer dizer para essa pessoa: '{minha_msg}'\n"
-                        f"Turbine essa mensagem para a vibe '{vibe}', levando em conta quem é o destinatário.\n"
-                        f"Mostre: 1) O PROBLEMA da versão original. 2) A NOVA VERSÃO turbinada (pronta pra enviar). "
-                        f"3) Por que a nova versão funciona melhor com essa pessoa nessa situação."
+                        f"Destinatário: {nome_destino or 'a pessoa de interesse'}.{contexto_pessoa}\n"
+                        f"O usuário quer dizer: '{minha_msg}'\n"
+                        f"Turbine para a vibe '{vibe}'.\n"
+                        f"Mostre: 1) O PROBLEMA da versão original. 2) A NOVA VERSÃO turbinada. 3) Por que funciona melhor."
                     )
                     res = mentor_milhao(prompt)
                     salvar_historico("💬 Turbinar", minha_msg, res)
@@ -542,7 +590,7 @@ elif st.session_state.etapa == "App":
             "Após uma briga", "Flerte avançado",
         ])
         sinais_extras = st.text_area("🔍 Sinais fora do chat (opcional):",
-            placeholder="ex: ela viu meu story mas não respondeu, curtiu uma foto antiga...", height=80)
+            placeholder="ex: ela viu meu story mas não respondeu...", height=80)
         chat_log = st.text_area("💬 Cole os últimos balões da conversa:", height=200)
 
         if st.button("🔬 DIAGNÓSTICO COMPLETO"):
@@ -572,8 +620,7 @@ elif st.session_state.etapa == "App":
             st.markdown("#### Configure a simulação")
             col_a, col_b = st.columns(2)
             with col_a:
-                nome_simulado = st.text_input("Nome ou apelido da pessoa:",
-                    placeholder="ex: Ana, Pedro, A menina do gym...")
+                nome_simulado = st.text_input("Nome ou apelido da pessoa:", placeholder="ex: Ana, Pedro...")
             with col_b:
                 situacao_rp = st.selectbox("Situação inicial:", [
                     "Primeiro contato no Direct",
@@ -591,11 +638,11 @@ elif st.session_state.etapa == "App":
 
             if st.button("🎬 INICIAR SIMULAÇÃO"):
                 if perfil.strip():
-                    st.session_state.roleplay_perfil = perfil
-                    st.session_state.roleplay_nome = nome_simulado or "a pessoa"
+                    st.session_state.roleplay_perfil   = perfil
+                    st.session_state.roleplay_nome     = nome_simulado or "a pessoa"
                     st.session_state.roleplay_situacao = situacao_rp
-                    st.session_state.roleplay_hist = []
-                    st.session_state.roleplay_ativo = True
+                    st.session_state.roleplay_hist     = []
+                    st.session_state.roleplay_ativo    = True
                     st.rerun()
                 else:
                     st.warning("Descreva a personalidade da pessoa antes de começar.")
@@ -607,7 +654,6 @@ elif st.session_state.etapa == "App":
                 f"<small>Perfil: {st.session_state.get('roleplay_perfil','')[:120]}...</small></div>",
                 unsafe_allow_html=True
             )
-
             for msg in st.session_state.roleplay_hist:
                 if msg['role'] == 'user':
                     st.markdown(f"**Você:** {msg['content']}")
@@ -627,15 +673,15 @@ elif st.session_state.etapa == "App":
                         st.session_state.roleplay_hist.append({"role": "user", "content": user_msg})
                         with st.spinner(f"{nome_sim} digitando..."):
                             system_rp = (
-                                f"Você está interpretando {nome_sim} em uma simulação de conversa para treinamento social. "
-                                f"Perfil detalhado: {st.session_state.roleplay_perfil}. "
+                                f"Você está interpretando {nome_sim} numa simulação de conversa para treinamento social. "
+                                f"Perfil: {st.session_state.roleplay_perfil}. "
                                 f"Situação: {st.session_state.roleplay_situacao}. "
                                 f"REGRAS: Responda APENAS como {nome_sim} responderia, de forma realista. "
                                 f"Nunca quebre o personagem. Nunca dê conselhos."
                             )
                             try:
                                 client = Groq(api_key=st.session_state.api_key)
-                                msgs = [{"role": "system", "content": system_rp}]
+                                msgs   = [{"role": "system", "content": system_rp}]
                                 msgs.extend(st.session_state.roleplay_hist)
                                 resp = client.chat.completions.create(
                                     messages=msgs, model="llama-3.3-70b-versatile",
@@ -669,7 +715,7 @@ elif st.session_state.etapa == "App":
             with col_reset:
                 if st.button("🔄 NOVA SIM"):
                     st.session_state.roleplay_ativo = False
-                    st.session_state.roleplay_hist = []
+                    st.session_state.roleplay_hist  = []
                     st.rerun()
 
     # ========================
@@ -724,13 +770,10 @@ elif st.session_state.etapa == "App":
         st.header("📸 Análise de Perfil e Bio")
         st.markdown("Descreva o perfil e a IA faz leitura de personalidade + abordagem ideal.")
 
-        nome_pessoa = st.text_input("Nome ou apelido (opcional):", placeholder="ex: Ana, O cara do gym...")
-        bio = st.text_area("📝 Bio/descrição do perfil:",
-            placeholder="ex: 'Vivendo um capítulo de cada vez ✈️🍷' | Médica | SP", height=80)
-        fotos = st.text_area("📷 Descrição das fotos/posts recentes:",
-            placeholder="ex: foto viajando sozinha, selfie academia, legenda filosófica...", height=100)
-        comportamento = st.text_area("👁️ Comportamentos observados (opcional):",
-            placeholder="ex: posta stories toda noite, segue poucos perfis...", height=80)
+        nome_pessoa  = st.text_input("Nome ou apelido (opcional):", placeholder="ex: Ana, O cara do gym...")
+        bio          = st.text_area("📝 Bio/descrição do perfil:", placeholder="ex: 'Vivendo um capítulo de cada vez ✈️🍷'", height=80)
+        fotos        = st.text_area("📷 Descrição das fotos/posts recentes:", placeholder="ex: foto viajando sozinha, selfie academia...", height=100)
+        comportamento= st.text_area("👁️ Comportamentos observados (opcional):", placeholder="ex: posta stories toda noite...", height=80)
 
         if st.button("🔍 ANALISAR PERFIL COMPLETO"):
             if bio.strip() or fotos.strip():
@@ -752,16 +795,14 @@ elif st.session_state.etapa == "App":
     # ========================
     elif st.session_state.pagina == "Comparar":
         st.header("⚔️ Comparar Duas Conversas")
-        st.markdown("Cole duas conversas e veja qual tem mais potencial — e o que fazer em cada uma.")
-
         col_a, col_b = st.columns(2)
         with col_a:
             st.markdown("### Conversa A")
-            nome_a = st.text_input("Nome/apelido (A):", placeholder="ex: Ana", key="nome_a")
+            nome_a     = st.text_input("Nome/apelido (A):", placeholder="ex: Ana", key="nome_a")
             conversa_a = st.text_area("Cole a Conversa A:", height=200, key="conv_a")
         with col_b:
             st.markdown("### Conversa B")
-            nome_b = st.text_input("Nome/apelido (B):", placeholder="ex: Carol", key="nome_b")
+            nome_b     = st.text_input("Nome/apelido (B):", placeholder="ex: Carol", key="nome_b")
             conversa_b = st.text_area("Cole a Conversa B:", height=200, key="conv_b")
 
         if st.button("⚔️ COMPARAR AGORA"):
@@ -785,12 +826,9 @@ elif st.session_state.etapa == "App":
     # ========================
     elif st.session_state.pagina == "Plano":
         st.header("🗓️ Plano de Conquista — 7 Dias")
-        st.markdown("Roteiro personalizado de ações para os próximos 7 dias.")
-
-        nome_alvo = st.text_input("Nome ou apelido da pessoa:", placeholder="ex: Ana")
-        contexto_alvo = st.text_area("O que você sabe sobre ela/ele e o contexto?",
-            placeholder="ex: se conheceram na academia, já trocaram mensagens...", height=100)
-        estagio = st.selectbox("Em que estágio vocês estão?", [
+        nome_alvo    = st.text_input("Nome ou apelido da pessoa:", placeholder="ex: Ana")
+        contexto_alvo= st.text_area("O que você sabe sobre ela/ele e o contexto?", height=100)
+        estagio      = st.selectbox("Em que estágio vocês estão?", [
             "Nunca conversamos — vou abordar pela primeira vez",
             "Já conversamos pouco, mas a conversa esfriou",
             "Estamos em contato, mas não avança",
@@ -810,7 +848,7 @@ elif st.session_state.etapa == "App":
                     )
                     res = mentor_milhao(prompt, sistema_extra="Coach especializado em estratégias de relacionamento.")
                     st.session_state.plano_conquista = res
-                    st.session_state.plano_pessoa = nome_alvo or "Pessoa de interesse"
+                    st.session_state.plano_pessoa    = nome_alvo or "Pessoa de interesse"
                     st.markdown(f"<div class='card-dark'>{res}</div>", unsafe_allow_html=True)
             else:
                 st.warning("Descreva o contexto antes de gerar o plano.")
@@ -825,11 +863,8 @@ elif st.session_state.etapa == "App":
     # ========================
     elif st.session_state.pagina == "RedFlags":
         st.header("🚩 Detector de Red Flags")
-        st.markdown("A IA identifica sinais de desinteresse, jogo mental ou comportamento problemático.")
-
-        chat_rf = st.text_area("💬 Cole a conversa aqui:", height=220)
-        comportamentos_rf = st.text_area("👁️ Comportamentos fora do chat (opcional):",
-            placeholder="ex: some por dias, responde só quando quer...", height=80)
+        chat_rf         = st.text_area("💬 Cole a conversa aqui:", height=220)
+        comportamentos_rf = st.text_area("👁️ Comportamentos fora do chat (opcional):", height=80)
 
         if st.button("🚩 ANALISAR RED FLAGS"):
             if chat_rf.strip():
@@ -837,14 +872,12 @@ elif st.session_state.etapa == "App":
                     prompt = (
                         f"Analise em busca de red flags:\nConversa:\n{chat_rf}\n"
                         f"Comportamentos externos: {comportamentos_rf}\n\n"
-                        f"Identifique:\n1. 🚩 RED FLAGS (cite trechos)\n2. 🟡 SINAIS AMBÍGUOS\n"
-                        f"3. ✅ SINAIS POSITIVOS\n4. 🧠 DIAGNÓSTICO GERAL\n5. 💡 RECOMENDAÇÃO\n\n"
-                        f"Seja honesto mesmo que difícil de ouvir."
+                        f"Identifique:\n1. 🚩 RED FLAGS\n2. 🟡 SINAIS AMBÍGUOS\n"
+                        f"3. ✅ SINAIS POSITIVOS\n4. 🧠 DIAGNÓSTICO GERAL\n5. 💡 RECOMENDAÇÃO"
                     )
                     res = mentor_milhao(prompt, sistema_extra="Analista de padrões de comportamento. Seja direto e honesto.")
                     salvar_historico("🚩 Red Flags", chat_rf[:80], res)
-                    tem_flags = "red flag" in res.lower() or "🚩" in res
-                    card = "card-vermelho" if tem_flags else "card"
+                    card = "card-vermelho" if ("red flag" in res.lower() or "🚩" in res) else "card"
                     st.markdown(f"<div class='{card}'>{res}</div>", unsafe_allow_html=True)
             else:
                 st.warning("Cole a conversa antes de analisar.")
@@ -857,12 +890,9 @@ elif st.session_state.etapa == "App":
 
         total, media, taxa = calcular_stats()
         c1, c2, c3 = st.columns(3)
-        with c1:
-            st.markdown(f"<div class='stat-box'><div class='stat-numero'>{total}</div><div>Total de análises</div></div>", unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"<div class='stat-box'><div class='stat-numero'>{media}/10</div><div>Interesse médio</div></div>", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"<div class='stat-box'><div class='stat-numero'>{taxa}%</div><div>Conversas quentes</div></div>", unsafe_allow_html=True)
+        c1.markdown(f"<div class='stat-box'><div class='stat-numero'>{total}</div><div>Total de análises</div></div>", unsafe_allow_html=True)
+        c2.markdown(f"<div class='stat-box'><div class='stat-numero'>{media}/10</div><div>Interesse médio</div></div>", unsafe_allow_html=True)
+        c3.markdown(f"<div class='stat-box'><div class='stat-numero'>{taxa}%</div><div>Conversas quentes</div></div>", unsafe_allow_html=True)
 
         if st.session_state.historico:
             st.markdown("<br>", unsafe_allow_html=True)
@@ -876,11 +906,9 @@ elif st.session_state.etapa == "App":
                     file_name="historico_agente_magnetico.txt", mime="text/plain")
 
             for i, item in enumerate(reversed(st.session_state.historico)):
-                if filtro == "⭐ Favoritos" and not item.get('favoritado'):
-                    continue
-                if filtro not in ["Todos", "⭐ Favoritos"] and item['tipo'] != filtro:
-                    continue
-                idx_real = len(st.session_state.historico) - 1 - i
+                if filtro == "⭐ Favoritos" and not item.get('favoritado'): continue
+                if filtro not in ["Todos", "⭐ Favoritos"] and item['tipo'] != filtro: continue
+                idx_real  = len(st.session_state.historico) - 1 - i
                 fav_label = "★ Desfavoritar" if item.get('favoritado') else "☆ Favoritar"
                 with st.expander(f"{'⭐' if item.get('favoritado') else ''} {item['tipo']} — {item['data']} | Interesse: {item['nivel_interesse']}/10"):
                     st.markdown(f"**Entrada:** {item['entrada']}")
@@ -914,8 +942,8 @@ elif st.session_state.etapa == "App":
         else:
             st.markdown(f"<div class='card'>📊 Baseado em <b>{total} análises</b> | Interesse médio: <b>{media}/10</b> | Conversas quentes: <b>{taxa}%</b></div>", unsafe_allow_html=True)
 
-            hoje = datetime.now().strftime('%d/%m/%Y')
-            ja_gerou = st.session_state.resumo_semanal and st.session_state.resumo_gerado_em == hoje
+            hoje    = datetime.now().strftime('%d/%m/%Y')
+            ja_gerou= st.session_state.resumo_semanal and st.session_state.resumo_gerado_em == hoje
 
             if ja_gerou:
                 st.markdown("### 📄 Seu Resumo de Hoje")
@@ -929,7 +957,7 @@ elif st.session_state.etapa == "App":
             else:
                 if st.button("✨ GERAR RESUMO SEMANAL"):
                     with st.spinner("Analisando sua evolução..."):
-                        tipos = [x['tipo'] for x in st.session_state.historico]
+                        tipos  = [x['tipo'] for x in st.session_state.historico]
                         prompt = (
                             f"Resumo semanal para {st.session_state.usuario}:\n"
                             f"- Análises: {total} | Tipos: {', '.join(set(tipos))}\n"
@@ -938,7 +966,7 @@ elif st.session_state.etapa == "App":
                             f"3. 📈 EVOLUÇÃO vs semana anterior\n4. 🎯 FOCO PARA A PRÓXIMA SEMANA\n5. 💡 DICA PERSONALIZADA"
                         )
                         resumo = mentor_milhao(prompt, sistema_extra="Coach de habilidades sociais. Seja encorajador mas honesto.")
-                        st.session_state.resumo_semanal = resumo
+                        st.session_state.resumo_semanal   = resumo
                         st.session_state.resumo_gerado_em = hoje
                         st.markdown(f"<div class='card-dark'>{resumo}</div>", unsafe_allow_html=True)
                         st.download_button("⬇️ Baixar Resumo TXT",
