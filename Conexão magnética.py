@@ -1048,13 +1048,12 @@ elif st.session_state.etapa == "App":
                     "fila de banco","salão de beleza","loja de discos","jardim botânico",
                     "estação de metrô","calçadão","praia","aluguel de bicicletas","museu"
                 ]
+                import random as _random
                 # Remove cenários já usados para garantir variedade
                 cenarios_disponiveis = [x for x in cenarios_todos if x not in cenarios_usados]
                 if not cenarios_disponiveis:
                     cenarios_disponiveis = cenarios_todos  # reset se usou todos
                 cenario = _random.choice(cenarios_disponiveis)
-                import random as _random
-                cenario = _random.choice(cenarios)
 
                 # Gera data de aniversário aleatória para o personagem
                 import random as _r2
