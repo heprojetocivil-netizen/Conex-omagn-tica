@@ -204,6 +204,7 @@ defaults = {
     'historico_personagens': [],
     'labia_nivel': 1, 'labia_chat': [], 'labia_personagem': None,
     'labia_falha_anterior': None, 'objetivos_usuario': [],
+    'labia_inicio': 0, 'labia_duracao': 180, 'labia_encerrado': False,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -239,7 +240,7 @@ def barra_salvar():
             f"<div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;"
             f"padding:10px 14px;font-size:0.84em;color:#1A1A2E;line-height:1.6;'>"
             f"💾 <strong>Salve seus dados antes de sair.</strong><br>"
-            f"<span style='color:#FF69B4;font-size:0.88em;'>"
+            f"<span style='color:#C2185B;font-size:0.88em;'>"
             f"{faixa_info[0]} {faixa_info[2]} · "
             f"{st.session_state.conversas_analisadas} análises · "
             f"{st.session_state.cartas_usadas} cartas usadas"
@@ -267,7 +268,7 @@ if st.session_state.etapa == "Login":
         padding:12px 16px;margin-bottom:16px;font-size:0.88em;color:#1A1A2E;line-height:1.6;">
         🔒 <strong>ACESSO RESTRITO A CLIENTES DO QUIZ COM PRÊMIOS</strong><br>
         🔗 <a href='https://quizcompremios.com.br/' target='_blank'
-        style='color:#FF69B4;font-weight:600;text-decoration:none;'>quizcompremios.com.br</a>
+        style='color:#C2185B;font-weight:600;text-decoration:none;'>quizcompremios.com.br</a>
         </div>""", unsafe_allow_html=True)
 
         perfis = perfis_salvos()
@@ -329,7 +330,7 @@ if st.session_state.etapa == "Login":
                 st.rerun()
             else:
                 st.warning("Preencha nome e chave API.")
-        st.markdown("🔑 Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#FF69B4;'>console.groq.com/keys</a>", unsafe_allow_html=True)
+        st.markdown("🔑 Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#C2185B;'>console.groq.com/keys</a>", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -719,7 +720,7 @@ elif st.session_state.etapa == "App":
             st.markdown(f"**Cenário:** {st.session_state.get('roleplay_cenario','')}")
             for msg in st.session_state.roleplay_chat:
                 if msg['role'] == 'user':
-                    st.markdown(f"<div class='chat-user'><b style='color:#FF69B4;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>🎭 Personagem:</b> {msg['content']}</div>", unsafe_allow_html=True)
 
@@ -781,276 +782,452 @@ elif st.session_state.etapa == "App":
     # A ARTE DA LÁBIA — SISTEMA COMPLETO
     # ──────────────────────────────────────────
     elif st.session_state.pagina == "Labia":
-        st.header("🎭 A Arte da Lábia")
-        st.markdown("*Aprenda a conversar sem travar, encantar sem esforço e seduzir com confiança.*")
-        st.markdown("*Aqui você não responde perguntas. Você conhece pessoas.*")
+        import time as _time
+        import json as _json
+        import re as _re
 
-        nivel = st.session_state.labia_nivel
-        faixa_atual = FAIXAS[min(nivel-1, 6)]
+        # ── FASES / PERSONAGENS ──
+        FASES_LABIA = [
+            (1, "🌱", "A Modesta",          "Receptiva, acolhedora, facilita a conversa.",          "Começar e manter uma conversa."),
+            (2, "😈", "A Atrevida",          "Brincalhona, irônica, testa espontaneidade.",          "Improviso e humor."),
+            (3, "💋", "A Deusa do Bairro",   "Segura, sabe que chama atenção, difícil impressionar.","Autoconfiança."),
+            (4, "👑", "A Inalcançável",      "Seletiva, pouca validação, percebe quem força.",       "Criar interesse sem forçar."),
+            (5, "🔥", "A Perigosa",          "Imprevisível, muda de humor, oscila entre aberta e fria.","Adaptação."),
+            (6, "💎", "A Raridade",          "Socialmente experiente, detecta artificialidade.",     "Profundidade e presença."),
+            (7, "👑", "A Lenda",             "Extremamente segura, zero necessidade, exige naturalidade.","Domínio total da conversa."),
+        ]
 
-        # Tabs internas
-        tab_j, tab_t, tab_h = st.tabs(["🥋 Sua Jornada","💬 Treinar Agora","📜 Histórico"])
+        DURACAO_FASES = {1:300,2:300,3:300,4:300,5:300,6:300,7:300}  # 5 min cada
 
-        with tab_j:
-            st.markdown("### 🥋 Sua Jornada nas Faixas")
-            for i, (n, faixa, titulo, desc) in enumerate(FAIXAS):
-                desbloqueada = n <= nivel
-                cor = "#FF69B4" if n == nivel else ("#22C55E" if n < nivel else "#E5E7EB")
-                status = "✅ Concluída" if n < nivel else ("🔥 Atual" if n == nivel else "🔒 Bloqueada")
+        ESTADOS_CONEXO = [
+            (80,  "🔥 CONEXÃO FORTE",    "#DC2626"),
+            (60,  "❤️ BOA QUÍMICA",      "#F59E0B"),
+            (40,  "😐 NEUTRO",           "#64748B"),
+            (20,  "⚠️ INTERESSE CAINDO", "#EA580C"),
+            (1,   "🚨 ÚLTIMA CHANCE",    "#7F1D1D"),
+            (0,   "💥 ELIMINADO",        "#000000"),
+        ]
+
+        def estado_conexo(val):
+            for minimo, label, cor in ESTADOS_CONEXO:
+                if val >= minimo:
+                    return label, cor
+            return "💥 ELIMINADO", "#000000"
+
+        # Defaults do jogo
+        if 'lj_fase'     not in st.session_state: st.session_state.lj_fase     = 1
+        if 'lj_persona'  not in st.session_state: st.session_state.lj_persona  = None
+        if 'lj_chat'     not in st.session_state: st.session_state.lj_chat     = []
+        if 'lj_conexo'   not in st.session_state: st.session_state.lj_conexo   = 100
+        if 'lj_inicio'   not in st.session_state: st.session_state.lj_inicio   = 0
+        if 'lj_ativo'    not in st.session_state: st.session_state.lj_ativo    = False
+        if 'lj_arranques' not in st.session_state: st.session_state.lj_arranques = []
+        if 'lj_ganchos'  not in st.session_state: st.session_state.lj_ganchos  = {"total":0,"usados":0}
+        if 'lj_combo'    not in st.session_state: st.session_state.lj_combo    = 0
+        if 'lj_aval'     not in st.session_state: st.session_state.lj_aval     = None
+        if 'lj_hist'     not in st.session_state: st.session_state.lj_hist     = []
+        if 'lj_fraqueza' not in st.session_state: st.session_state.lj_fraqueza = None
+        if 'lj_usados'   not in st.session_state: st.session_state.lj_usados   = []
+        if 'lj_ts_persona' not in st.session_state: st.session_state.lj_ts_persona = 0
+        if 'lj_recordes' not in st.session_state: st.session_state.lj_recordes = {"melhor_conexo":0,"maior_seq":0,"mais_arranques":0,"fases":0}
+
+        fase_idx = st.session_state.lj_fase - 1
+        fase_info = FASES_LABIA[min(fase_idx, 6)]
+
+        # ══════════════════════════════════════
+        # TELA INICIAL — SEM PARTIDA ATIVA
+        # ══════════════════════════════════════
+        if not st.session_state.lj_ativo:
+
+            st.markdown("## 🎭 A Arte da Lábia")
+            st.markdown("*Aprenda a conversar sem travar, criar conexão e dominar qualquer conversa.*")
+            st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+            # PROGRESSÃO
+            st.markdown("### 🏆 Sua Progressão")
+            cols_fases = st.columns(7)
+            for i, (n, emoji, nome, _, _hab) in enumerate(FASES_LABIA):
+                desbloqueada = n <= st.session_state.lj_fase
+                concluida    = n <  st.session_state.lj_fase
+                cor = "#22C55E" if concluida else ("#FF69B4" if desbloqueada else "#E5E7EB")
+                lock = "✅" if concluida else ("🔓" if desbloqueada else "🔒")
+                with cols_fases[i]:
+                    st.markdown(f"""
+                    <div style='text-align:center;background:#FFFFFF;border:2px solid {cor};
+                    border-radius:12px;padding:10px 4px;'>
+                        <div style='font-size:1.4em;'>{emoji}</div>
+                        <div style='font-size:0.65em;font-weight:700;color:#1A1A2E;line-height:1.2;'>{nome}</div>
+                        <div style='font-size:0.8em;margin-top:4px;'>{lock}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            rec = st.session_state.lj_recordes
+            st.markdown(f"""
+            <div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;
+            padding:12px 16px;margin-top:12px;font-size:0.88em;color:#1A1A2E;'>
+            🏅 Melhor Conexão: <strong>{rec['melhor_conexo']}</strong> &nbsp;·&nbsp;
+            🔥 Maior sequência: <strong>{rec['maior_seq']}</strong> &nbsp;·&nbsp;
+            🚀 Mais arranques: <strong>{rec['mais_arranques']}</strong> &nbsp;·&nbsp;
+            🏆 Fases concluídas: <strong>{rec['fases']}</strong>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+
+            # Resultado da última partida
+            if st.session_state.lj_aval:
+                aval = st.session_state.lj_aval
+                aprovado = aval.get('aprovado', False)
+                cor_res = "#14532D" if aprovado else "#7F1D1D"
+                bg_res  = "#F0FDF4" if aprovado else "#FFF5F5"
+                bd_res  = "#86EFAC" if aprovado else "#FECACA"
+                icon_res = "🎉" if aprovado else "💥"
+
                 st.markdown(f"""
-                <div style='background:#FFFFFF;border:2px solid {cor};border-radius:14px;
-                padding:14px 18px;margin-bottom:10px;'>
-                    <div style='display:flex;justify-content:space-between;align-items:center;'>
-                        <div>
-                            <span style='font-weight:700;color:#1A1A2E;font-size:1em;'>{faixa} {titulo}</span><br>
-                            <span style='font-size:0.85em;color:#4B5563;'>{desc}</span>
-                        </div>
-                        <span style='font-size:0.82em;font-weight:600;color:{cor};'>{status}</span>
+                <div style='background:{bg_res};border:2px solid {bd_res};border-radius:14px;padding:18px 22px;margin-bottom:16px;'>
+                    <div style='font-size:1.1em;font-weight:700;color:{cor_res};'>{icon_res} {aval.get('titulo','Resultado')}</div>
+                    <div style='display:flex;gap:20px;margin:10px 0;flex-wrap:wrap;'>
+                        <span style='color:#1A1A2E;'>❤️ Conexão final: <strong>{aval.get('conexo_final',0)}</strong></span>
+                        <span style='color:#1A1A2E;'>🚀 Arranques: <strong>{aval.get('n_arranques',0)}</strong></span>
+                        <span style='color:#1A1A2E;'>🎯 Ganchos: <strong>{aval.get('ganchos_usados',0)}/{aval.get('ganchos_total',0)}</strong></span>
+                    </div>
+                    <div style='color:#1A1A2E;font-size:0.9em;margin-top:6px;'>
+                        🟢 <strong>Acertou:</strong> {aval.get('acertou','—')}<br>
+                        🟡 <strong>Pode melhorar:</strong> {aval.get('melhorar','—')}<br>
+                        🔴 <strong>Principal erro:</strong> {aval.get('erro','—')}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("""<div class='card-blue'>
-            👑 <strong>Don Juan não significa conquistar qualquer pessoa.</strong><br>
-            Significa dominar a própria comunicação. Saber iniciar. Saber ouvir. Saber improvisar.
-            Saber quando continuar — e quando deixar ir.
-            </div>""", unsafe_allow_html=True)
+            # INICIAR
+            st.markdown(f"### {fase_info[1]} {fase_info[2]} — Fase {fase_info[0]}")
+            st.markdown(f"*{fase_info[3]}*")
+            st.markdown(f"🎯 **Habilidade:** {fase_info[4]}")
 
-        with tab_t:
-            st.markdown(f"### {faixa_atual[0]} {faixa_atual[2]} — Nível {nivel}")
-            st.markdown(f"*{faixa_atual[3]}*")
+            col_g, col_i = st.columns([2,1])
+            with col_g:
+                genero_sel = st.radio("Conversar com:", ["Mulher","Homem"], horizontal=True, key="lj_genero")
+            with col_i:
+                st.markdown("<br>", unsafe_allow_html=True)
 
-            # Configurações do desafio por nível
-            configs_nivel = {
-                1: {"ajuda":"TOTAL — dicas e respostas sugeridas","dificuldade":"Facilitador","turnos_min":5,"tempo":None},
-                2: {"ajuda":"PISTA — sem resposta direta","dificuldade":"Acessível","turnos_min":7,"tempo":None},
-                3: {"ajuda":"NENHUMA — silêncio real","dificuldade":"Neutro","turnos_min":8,"tempo":12},
-                4: {"ajuda":"NENHUMA — provocações","dificuldade":"Testador","turnos_min":8,"tempo":8},
-                5: {"ajuda":"NENHUMA — respostas frias","dificuldade":"Reservado","turnos_min":10,"tempo":8},
-                6: {"ajuda":"NENHUMA — imprevisível","dificuldade":"Oscilante","turnos_min":10,"tempo":7},
-                7: {"ajuda":"ZERO — sem proteção","dificuldade":"Extremamente seletivo","turnos_min":12,"tempo":6},
-            }
-            cfg = configs_nivel[nivel]
+            if st.button("🎲 INICIAR DESAFIO", use_container_width=True):
+                fase_n = st.session_state.lj_fase
+                genero_str = "feminino" if genero_sel == "Mulher" else "masculino"
 
-            if not st.session_state.labia_personagem:
-                # Gerar novo personagem
-                hist_p = st.session_state.get('historico_personagens', [])
-                hist_txt = ", ".join(hist_p[-5:]) if hist_p else "nenhum"
+                # Características por fase
+                carac = {
+                    1:"Aberta, receptiva, facilita a conversa, oferece muitos ganchos, tolera respostas medianas.",
+                    2:"Brincalhona, usa ironia, provoca levemente, gosta de humor e espontaneidade.",
+                    3:"Segura, sabe que chama atenção, não fica impressionada facilmente, não precisa de esforço.",
+                    4:"Muito seletiva, oferece pouca validação, percebe quando alguém tenta impressioná-la.",
+                    5:"Imprevisível — pode estar aberta e fechar de repente, muda de humor, oscila.",
+                    6:"Socialmente experiente, detecta perguntas artificiais, insegurança e conversa superficial.",
+                    7:"Extremamente segura, muitas opções sociais, não facilita, não precisa da conversa.",
+                }[fase_n]
 
-                col_c, col_g = st.columns([3,1])
-                with col_c:
-                    st.markdown(f"**Ajuda disponível:** {cfg['ajuda']}")
-                    st.markdown(f"**Tipo de personagem:** {cfg['dificuldade']}")
+                fraqueza_txt = f"O usuário falhou em: {st.session_state.lj_fraqueza}. Crie situações que testem isso." if st.session_state.lj_fraqueza else ""
+                usados_txt = ", ".join(st.session_state.lj_usados[-6:]) if st.session_state.lj_usados else "nenhum"
 
-                    # Mostrar erro anterior se houver
-                    if st.session_state.labia_falha_anterior:
-                        st.markdown(f"<div class='card-yellow'>⚠️ <strong>No desafio anterior você falhou em:</strong> {st.session_state.labia_falha_anterior}<br>O próximo personagem vai testar exatamente essa habilidade.</div>", unsafe_allow_html=True)
+                cenarios = ["cafeteria","parque","livraria","fila de evento","shopping","feira","exposição","aeroporto","praça","academia","evento musical","aniversário"]
+                import random as _random
+                cenario = _random.choice(cenarios)
 
-                with col_g:
-                    if st.button("🎲 GERAR PERSONAGEM", use_container_width=True):
-                        with st.spinner("Criando personagem..."):
-                            falha_txt = f"O usuário falhou anteriormente em: {st.session_state.labia_falha_anterior}. Crie situações que testem especificamente essa habilidade." if st.session_state.labia_falha_anterior else ""
+                prompt_p = (
+                    f"Crie um personagem fictício adulto de gênero {genero_str} para simulação social.\n"
+                    f"Fase {fase_n}/7: {carac}\n"
+                    f"Cenário: {cenario}.\n"
+                    f"Não repita: {usados_txt}. {fraqueza_txt}\n\n"
+                    f"RETORNE APENAS JSON válido (sem markdown):\n"
+                    f'{{"nome":"","genero":"{genero_str}","idade":0,"profissao":"","cidade":"","personalidade":{{"extroversao":0,"humor":0,"curiosidade":0,"paciencia":0,"confianca":0,"seletividade":0}},'
+                    f'"interesses":[],"musica":"","esporte":"","estilo_fala":"","nivel_dificuldade":{fase_n},'
+                    f'"cenario":"{cenario}","primeira_fala":""}}\n\n'
+                    f"primeira_fala: 1-2 frases curtas, naturais, contextuais ao cenário. Não diga 'oi tudo bem'. Seja criativa."
+                )
+                with st.spinner("Criando personagem..."):
+                    p_txt = conexa_ia(prompt_p)
+                    try:
+                        jm = _re.search(r'\{.*\}', p_txt, _re.DOTALL)
+                        persona = _json.loads(jm.group(0)) if jm else {}
+                    except:
+                        persona = {}
 
-                            prompt_persona = (
-                                f"Crie um personagem fictício adulto para simulação de conversa no nível {nivel}/7.\n"
-                                f"Dificuldade: {cfg['dificuldade']}. {falha_txt}\n"
-                                f"Personagens já usados: {hist_txt}. NÃO repita nome, profissão ou cenário.\n\n"
-                                f"NÍVEL {nivel} — características:\n"
-                                + {
-                                    1: "Personagem aberto, receptivo, facilita a conversa naturalmente. Cenário casual simples.",
-                                    2: "Personagem acessível mas não carrega a conversa. Fornece ganchos mas não os reforça.",
-                                    3: "Personagem neutro. Pode ficar em silêncio após respostas curtas do usuário.",
-                                    4: "Personagem que faz provocações leves e plausíveis. Testa segurança e humor.",
-                                    5: "Personagem reservado. Respostas curtas. Pouca reciprocidade. Não oferece ganchos.",
-                                    6: "Personagem imprevisível — pode estar aberto e fechar de repente. Ironia e mudanças de energia.",
-                                    7: "Personagem extremamente seletivo, sociável, recebe muita atenção. Pouco tempo de paciência.",
-                                }[nivel] + "\n\n"
-                                f"RETORNE UM JSON com:\n"
-                                f'{{"nome":"","idade_aprox":"","profissao":"","cenario":"","personalidade":"","interesses":[],"estilo_fala":"","nivel_abertura":"","primeira_fala":""}}'
-                            )
-                            persona_txt = conexa_ia(prompt_persona)
-                            # Extrai JSON
-                            try:
-                                import re as re_mod
-                                json_match = re_mod.search(r'\{[^{}]+\}', persona_txt, re_mod.DOTALL)
-                                persona = json.loads(json_match.group(0)) if json_match else {"nome":"Alex","cenario":"Numa cafeteria","primeira_fala":"Oi, desculpa o barulho aqui hoje.","personalidade":"Reservado","interesses":["música"],"estilo_fala":"Direto","nivel_abertura":"Baixo","profissao":"Designer","idade_aprox":"28"}
-                            except:
-                                persona = {"nome":"Alex","cenario":"Numa cafeteria","primeira_fala":"Oi, desculpa o barulho aqui hoje.","personalidade":"Reservado","interesses":["música"],"estilo_fala":"Direto","nivel_abertura":"Baixo","profissao":"Designer","idade_aprox":"28"}
+                if not persona.get('nome'):
+                    defaults_f = {
+                        "feminino": {"nome":"Ana","genero":"feminino","idade":27,"profissao":"Designer","cidade":"BH","personalidade":{"extroversao":7,"humor":7,"curiosidade":8,"paciencia":7,"confianca":7,"seletividade":fase_n*14},"interesses":["música","viagens"],"musica":"MPB","esporte":"yoga","estilo_fala":"casual","nivel_dificuldade":fase_n,"cenario":cenario,"primeira_fala":"Esse lugar sempre fica cheio assim?"},
+                        "masculino": {"nome":"Bruno","genero":"masculino","idade":29,"profissao":"Arquiteto","cidade":"SP","personalidade":{"extroversao":6,"humor":7,"curiosidade":7,"paciencia":7,"confianca":7,"seletividade":fase_n*14},"interesses":["cinema","esporte"],"musica":"rock","esporte":"futebol","estilo_fala":"casual","nivel_dificuldade":fase_n,"cenario":cenario,"primeira_fala":"Você sabe se a fila anda logo?"},
+                    }
+                    persona = defaults_f[genero_str]
 
-                            st.session_state.labia_personagem = persona
-                            st.session_state.labia_chat = []
-                            # Registra no histórico anti-repetição
-                            hist_p.append(f"{persona.get('nome','')} / {persona.get('profissao','')} / {persona.get('cenario','')}")
-                            st.session_state['historico_personagens'] = hist_p
-                            st.rerun()
+                # Registra anti-repetição
+                registro = f"{persona.get('nome','')} / {persona.get('profissao','')} / {cenario}"
+                st.session_state.lj_usados.append(registro)
 
-            else:
-                persona = st.session_state.labia_personagem
-                chat = st.session_state.labia_chat
+                # Inicia partida
+                st.session_state.lj_persona   = persona
+                st.session_state.lj_chat      = [{"role":"assistant","content":persona.get('primeira_fala','Oi.'),"ts":_time.time()}]
+                st.session_state.lj_conexo    = 100
+                st.session_state.lj_inicio    = _time.time()
+                st.session_state.lj_ativo     = True
+                st.session_state.lj_arranques = []
+                st.session_state.lj_ganchos   = {"total":0,"usados":0}
+                st.session_state.lj_combo     = 0
+                st.session_state.lj_aval      = None
+                st.session_state.lj_ts_persona = _time.time()
+                st.rerun()
 
-                # Info do personagem (sem revelar a ficha completa)
+        # ══════════════════════════════════════
+        # PARTIDA ATIVA
+        # ══════════════════════════════════════
+        else:
+            persona   = st.session_state.lj_persona
+            chat      = st.session_state.lj_chat
+            conexo    = st.session_state.lj_conexo
+            fase_n    = st.session_state.lj_fase
+            duracao   = DURACAO_FASES[min(fase_n, 7)]
+            decorrido = _time.time() - st.session_state.lj_inicio
+            restante  = max(0, duracao - decorrido)
+            mins_r    = int(restante // 60)
+            segs_r    = int(restante % 60)
+            pct_tempo = max(0.0, 1 - decorrido / duracao)
+            cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#F59E0B" if pct_tempo > 0.2 else "#EF4444")
+
+            estado_label, estado_cor = estado_conexo(conexo)
+
+            # ── HEADER: CENÁRIO + CONEXÔMETRO + TIMER ──
+            col_cen, col_con, col_tim = st.columns([3,2,1])
+            with col_cen:
                 st.markdown(f"""
-                <div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:12px;padding:12px 18px;margin-bottom:16px;'>
-                    <strong style='color:#1A1A2E;'>📍 {persona.get('cenario','')}</strong><br>
-                    <span style='font-size:0.85em;color:#4B5563;'>Você está prestes a iniciar uma conversa. O personagem possui personalidade própria — descubra conversando.</span>
+                <div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;padding:10px 14px;'>
+                    <strong style='color:#1A1A2E;'>📍 {persona.get('cenario','').capitalize()}</strong><br>
+                    <span style='font-size:0.8em;color:#4B5563;'>Você acaba de conhecer alguém.</span>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_con:
+                pct_con = conexo / 100
+                cor_con = "#22C55E" if conexo>60 else ("#F59E0B" if conexo>30 else "#EF4444")
+                st.markdown(f"""
+                <div style='background:#FFFFFF;border:2px solid {cor_con};border-radius:10px;padding:8px 12px;'>
+                    <div style='font-size:0.65em;color:#64748B;letter-spacing:1px;'>❤️ CONEXÔMETRO</div>
+                    <div style='display:flex;align-items:center;gap:8px;margin-top:2px;'>
+                        <div style='flex:1;background:#F1F5F9;border-radius:999px;height:8px;overflow:hidden;'>
+                            <div style='height:100%;border-radius:999px;background:{cor_con};width:{conexo}%;'></div>
+                        </div>
+                        <span style='font-size:1.1em;font-weight:700;color:{cor_con};'>{conexo}</span>
+                    </div>
+                    <div style='font-size:0.72em;color:{cor_con};font-weight:600;margin-top:2px;'>{estado_label}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col_tim:
+                st.markdown(f"""
+                <div style='background:#FFFFFF;border:2px solid {cor_timer};border-radius:10px;
+                padding:8px 10px;text-align:center;'>
+                    <div style='font-size:0.6em;color:#64748B;'>⏱️</div>
+                    <div style='font-size:1.6em;font-weight:700;color:{cor_timer};font-family:"Playfair Display",serif;'>{mins_r:02d}:{segs_r:02d}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Iniciar conversa se chat vazio
-                if not chat:
-                    primeira_fala = persona.get('primeira_fala', 'Oi.')
-                    chat.append({"role":"assistant","content":primeira_fala})
-                    st.session_state.labia_chat = chat
+            st.markdown("<br>", unsafe_allow_html=True)
 
-                # Exibir chat
-                turno_usuario = sum(1 for m in chat if m['role']=='user')
-                for msg in chat:
-                    if msg['role'] == 'user':
-                        st.markdown(f"<div class='chat-user'><b style='color:#FF69B4;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>🎭 {persona.get('nome','?')}:</b> {msg['content']}</div>", unsafe_allow_html=True)
+            # ── CHAT ──
+            for msg in chat:
+                if msg['role'] == 'user':
+                    st.markdown(f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
+                else:
+                    # Arranque se houver
+                    arr = msg.get('arranque')
+                    if arr:
+                        st.markdown(f"<div style='text-align:right;font-size:0.8em;color:#22C55E;font-weight:600;margin-bottom:2px;'>{arr}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>{persona.get('nome','?')}:</b> {msg['content']}</div>", unsafe_allow_html=True)
 
-                # Ajuda contextual por nível
-                if nivel == 1 and turno_usuario == 0:
-                    ultima_persona = [m['content'] for m in chat if m['role']=='assistant'][-1] if chat else ""
-                    st.markdown(f"<div class='card-green'>💡 <strong>Dica (Nível 1):</strong> {persona.get('nome','Ela')} acabou de falar. Responda de forma natural — você pode comentar o que foi dito ou fazer uma pergunta relacionada.</div>", unsafe_allow_html=True)
-                elif nivel == 2 and turno_usuario < 2:
-                    st.markdown("<div class='card-yellow'>💡 <strong>Pista:</strong> Existe um detalhe na última fala que pode virar assunto.</div>", unsafe_allow_html=True)
+            # Alerta última chance
+            if 0 < conexo <= 20:
+                st.markdown("<div class='card-red' style='padding:10px 14px;font-size:0.88em;'>🚨 <strong>ÚLTIMA CHANCE</strong> — A conversa está esfriando. Mude de rota.</div>", unsafe_allow_html=True)
 
-                # Input e botões
-                msg_labia = st.text_input("Sua resposta:", key=f"labia_input_{len(chat)}", placeholder="O que você diz?")
+            # Dica nível 1 e 2
+            turno_u = sum(1 for m in chat if m['role']=='user')
+            if fase_n == 1 and turno_u == 0:
+                st.markdown(f"<div class='card-green' style='padding:10px 14px;font-size:0.85em;'>💡 Comente o que {persona.get('nome','ela')} disse ou faça uma pergunta relacionada.</div>", unsafe_allow_html=True)
+            elif fase_n == 2 and turno_u < 2:
+                st.markdown("<div class='card-yellow' style='padding:10px 14px;font-size:0.85em;'>💡 Há um detalhe na última fala que pode render assunto.</div>", unsafe_allow_html=True)
 
-                col_e, col_fim, col_aband = st.columns([3,1,1])
+            # Combo
+            if st.session_state.lj_combo >= 3:
+                st.markdown(f"<div style='text-align:center;font-size:0.9em;font-weight:700;color:#F59E0B;'>🔥 COMBO x{st.session_state.lj_combo}</div>", unsafe_allow_html=True)
+
+            # ── VERIFICAR FIM ──
+            tempo_esgotado = restante <= 0
+            conexo_zero = conexo <= 0
+
+            if tempo_esgotado or conexo_zero:
+                # ENCERRAR PARTIDA
+                motivo = "tempo" if tempo_esgotado else "conexao"
+                hist_txt = "\n".join(f"{'Você' if m['role']=='user' else persona.get('nome','?')}: {m['content']}" for m in chat)
+                fa_info = FASES_LABIA[min(fase_n-1,6)]
+                n_arr = len(st.session_state.lj_arranques)
+                g = st.session_state.lj_ganchos
+
+                prompt_aval = (
+                    f"Avalie esta conversa de treinamento social. Fase {fase_n}/7 — {fa_info[2]}.\n"
+                    f"Personagem: {persona.get('nome','')} ({persona.get('profissao','')}, fase {fase_n}).\n"
+                    f"Motivo do encerramento: {'tempo esgotado' if motivo=='tempo' else 'conexão chegou a zero'}.\n"
+                    f"Conexão final: {conexo}.\n\n"
+                    f"Conversa:\n{hist_txt}\n\n"
+                    f"RESPONDA EM JSON (sem markdown):\n"
+                    f'{{"aprovado":true/false,"nota_natural":0,"nota_escuta":0,"nota_humor":0,"nota_adaptacao":0,'
+                    f'"nota_ganchos":0,"acertou":"1-2 frases","melhorar":"1-2 frases","erro_principal":"1-2 frases",'
+                    f'"proximo_treino":"1 linha","fraqueza_detectada":"1 habilidade específica"}}'
+                )
+                with st.spinner("Calculando resultado..."):
+                    aval_txt = conexa_ia(prompt_aval)
+                    try:
+                        jm2 = _re.search(r'\{.*\}', aval_txt, _re.DOTALL)
+                        aval_d = _json.loads(jm2.group(0)) if jm2 else {}
+                    except:
+                        aval_d = {}
+
+                aprovado = (conexo > 0 and aval_d.get('aprovado', conexo >= 50))
+
+                # Atualizar recordes
+                rec = st.session_state.lj_recordes
+                if conexo > rec['melhor_conexo']:       rec['melhor_conexo'] = conexo
+                if n_arr > rec['mais_arranques']:        rec['mais_arranques'] = n_arr
+                if aprovado:
+                    rec['fases'] = max(rec['fases'], fase_n)
+                    st.session_state.lj_fase = min(fase_n + 1, 7)
+                    st.session_state.lj_fraqueza = None
+                else:
+                    st.session_state.lj_fraqueza = aval_d.get('fraqueza_detectada')
+
+                st.session_state.lj_recordes = rec
+                st.session_state.lj_hist.append({
+                    "fase": fase_n, "persona": persona.get('nome',''),
+                    "conexo": conexo, "aprovado": aprovado,
+                    "data": datetime.now().strftime('%d/%m %H:%M'),
+                })
+
+                # Monta objeto de avaliação
+                st.session_state.lj_aval = {
+                    "aprovado": aprovado,
+                    "titulo": "FASE CONCLUÍDA! 🎉" if aprovado else "CONEXÃO PERDIDA 💥",
+                    "conexo_final": conexo,
+                    "n_arranques": n_arr,
+                    "ganchos_usados": g.get("usados",0),
+                    "ganchos_total": g.get("total",0),
+                    "acertou": aval_d.get("acertou","—"),
+                    "melhorar": aval_d.get("melhorar","—"),
+                    "erro": aval_d.get("erro_principal","—"),
+                }
+                st.session_state.lj_ativo   = False
+                st.session_state.lj_persona = None
+                st.session_state.lj_chat    = []
+                st.rerun()
+
+            else:
+                # ── INPUT ──
+                msg_labia = st.text_input("", key=f"lj_input_{len(chat)}", placeholder="O que você diz?", label_visibility="collapsed")
+
+                col_e, col_ab = st.columns([4,1])
                 with col_e:
-                    if st.button("📤 ENVIAR", key="labia_enviar"):
+                    if st.button("📤 ENVIAR", key="lj_enviar", use_container_width=True):
                         if msg_labia.strip():
-                            # Sistema do personagem
-                            system_labia = (
-                                f"Você é {persona.get('nome','?')}, {persona.get('idade_aprox','adulto')}, {persona.get('profissao','')}. "
-                                f"Personalidade: {persona.get('personalidade','')}. "
-                                f"Interesses: {', '.join(persona.get('interesses',[]))}. "
-                                f"Estilo de fala: {persona.get('estilo_fala','')}. "
-                                f"Nível de abertura: {persona.get('nivel_abertura','')}. "
-                                f"Cenário: {persona.get('cenario','')}.\n\n"
+                            ts_user = _time.time()
+                            tempo_resposta = ts_user - st.session_state.lj_ts_persona
+
+                            # System do personagem
+                            pers = persona.get('personalidade',{})
+                            system_p = (
+                                f"Você é {persona.get('nome','?')}, {persona.get('idade',25)} anos, {persona.get('profissao','')}.\n"
+                                f"Personalidade: extroversão {pers.get('extroversao',7)}/10, humor {pers.get('humor',7)}/10, "
+                                f"confiança {pers.get('confianca',7)}/10, seletividade {pers.get('seletividade',3)}/10.\n"
+                                f"Interesses: {', '.join(persona.get('interesses',[]))}. Música: {persona.get('musica','')}.\n"
+                                f"Estilo: {persona.get('estilo_fala','')}. Cenário: {persona.get('cenario','')}.\n"
+                                f"Fase {fase_n}/7 — dificuldade: {FASES_LABIA[min(fase_n-1,6)][2]}.\n\n"
                                 f"REGRAS ABSOLUTAS:\n"
-                                f"- Responda como essa pessoa real responderia, não como assistente\n"
-                                f"- NÃO termine toda fala com pergunta — pessoas reais não fazem isso\n"
-                                f"- Mantenha personalidade CONSISTENTE com o nível {nivel}\n"
-                                f"- Nível {nivel}: {cfg['dificuldade']} — {'facilite naturalmente' if nivel<=2 else 'não salve a conversa artificialmente'}\n"
-                                f"- A conversa deve parecer real, não um script\n"
-                                f"- Lembre de TODO o histórico da conversa"
+                                f"- Responda COMO ESSA PESSOA, não como IA\n"
+                                f"- MÁXIMO 1-2 frases (5-40 palavras)\n"
+                                f"- NÃO termine sempre com pergunta\n"
+                                f"- Você pode: comentar, brincar, discordar, provocar, contar algo, reagir, ficar em silêncio\n"
+                                f"- {'Seja receptiva e facilite levemente' if fase_n<=2 else 'NÃO facilite artificialmente'}\n"
+                                f"- Se a pergunta for artificial ou entrevista, reaja com menos entusiasmo\n"
+                                f"- Mantenha memória de TUDO que foi dito\n"
+                                f"- NUNCA revele que é uma IA ou que existe um jogo\n"
+                                f"- Zero prolixidade. Se tiver pouco a dizer, diga pouco."
                             )
-                            historico_msgs = [{"role":m["role"],"content":m["content"]} for m in chat]
-                            with st.spinner("..."):
+                            historico = [{"role":m["role"],"content":m["content"]} for m in chat]
+                            with st.spinner(""):
                                 try:
                                     client = Groq(api_key=st.session_state.api_key)
-                                    msgs = [{"role":"system","content":system_labia}] + historico_msgs + [{"role":"user","content":msg_labia}]
-                                    resp_l = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile")
-                                    resp_txt_l = resp_l.choices[0].message.content
+                                    msgs = [{"role":"system","content":system_p}] + historico + [{"role":"user","content":msg_labia}]
+                                    resp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-versatile", max_tokens=80)
+                                    resp_txt = resp.choices[0].message.content.strip()
                                 except Exception as e:
-                                    resp_txt_l = f"⚠️ Erro: {e}"
-                            chat.append({"role":"user","content":msg_labia})
-                            chat.append({"role":"assistant","content":resp_txt_l})
-                            st.session_state.labia_chat = chat
+                                    resp_txt = "Interessante."
+
+                            # ── AVALIAR RESPOSTA E ATUALIZAR CONEXÔMETRO ──
+                            prompt_eval = (
+                                f"Avalie a última resposta do usuário nesta conversa de treinamento social.\n"
+                                f"Fase: {fase_n}/7. Personagem: {FASES_LABIA[min(fase_n-1,6)][2]}.\n"
+                                f"Tempo de resposta: {tempo_resposta:.1f}s.\n"
+                                f"Últimas falas:\n"
+                                f"Personagem: {chat[-1]['content'] if chat else ''}\n"
+                                f"Usuário: {msg_labia}\n\n"
+                                f"RETORNE JSON (sem markdown):\n"
+                                f'{{"delta":-15,"arranque":"","tipo_arranque":""}}\n\n'
+                                f"delta: número entre -30 e +25 (positivo=bom, negativo=ruim).\n"
+                                f"arranque: string curta SE delta>10 (ex: '🎯 +14 GANCHO PERFEITO'), senão string vazia.\n"
+                                f"tipo_arranque: categoria do arranque se houver, senão vazio.\n"
+                                f"Critérios: naturalidade, aproveitamento de gancho, humor, reciprocidade, adaptação, tempo.\n"
+                                f"Penalizar: monossilábicos, sequência de perguntas, ignorar contexto, forçar impressionar.\n"
+                                f"Tempo > 15s penaliza levemente (fase {fase_n}, peso {10+fase_n*5}%)."
+                            )
+                            with st.spinner(""):
+                                try:
+                                    eval_txt = conexa_ia(prompt_eval)
+                                    jm3 = _re.search(r'\{.*\}', eval_txt, _re.DOTALL)
+                                    eval_d = _json.loads(jm3.group(0)) if jm3 else {}
+                                except:
+                                    eval_d = {}
+
+                            delta = eval_d.get('delta', 0)
+                            arranque = eval_d.get('arranque', '')
+
+                            novo_conexo = max(0, min(100, conexo + delta))
+
+                            # Combo
+                            if delta > 5:
+                                st.session_state.lj_combo += 1
+                            else:
+                                st.session_state.lj_combo = 0
+
+                            # Registra arranque
+                            if arranque:
+                                st.session_state.lj_arranques.append(arranque)
+
+                            # Ganchos (heurística simples)
+                            if any(w in msg_labia.lower() for w in [p.lower() for p in persona.get('interesses',[])]):
+                                st.session_state.lj_ganchos['usados'] += 1
+                            st.session_state.lj_ganchos['total'] = max(1, turno_u + 1)
+
+                            # Atualiza estado
+                            st.session_state.lj_conexo = novo_conexo
+                            st.session_state.lj_ts_persona = _time.time()
+
+                            chat.append({"role":"user","content":msg_labia,"ts":ts_user,"delta":delta})
+                            chat.append({"role":"assistant","content":resp_txt,"ts":_time.time(),"arranque":arranque})
+                            st.session_state.lj_chat = chat
                             st.rerun()
 
-                with col_fim:
-                    if st.button("🏁 Finalizar", key="labia_fim"):
-                        if len(chat) >= cfg['turnos_min'] * 2:
-                            with st.spinner("Avaliando..."):
-                                hist_labia_txt = "\n".join(f"{'Usuário' if m['role']=='user' else persona.get('nome','?')}: {m['content']}" for m in chat)
-                                criterios_nivel = {
-                                    1: "5+ turnos, sem respostas monossilábicas, iniciou 1 assunto, aproveitou 1 informação do personagem",
-                                    2: "7+ turnos, aproveitou 2+ ganchos, 1 pergunta aberta, sem depender de ajuda",
-                                    3: "8-10 turnos, 80% das respostas desenvolvidas, 3+ ganchos aproveitados, sem pedir dica",
-                                    4: "8+ turnos, respondeu provocações com naturalidade, manteve humor, sem ficar defensivo",
-                                    5: "10+ turnos, recuperou 3 momentos de baixa reciprocidade, soube quando não insistir",
-                                    6: "10+ turnos, adaptou-se a mudanças de energia, não seguiu formato de entrevista",
-                                    7: "12+ turnos, sustentou conversa interessante sem rede de proteção alguma",
-                                }
-                                prompt_aval_l = (
-                                    f"Avalie a performance nesta simulação de Arte da Lábia.\n"
-                                    f"Nível: {nivel}/7 — {faixa_atual[2]}.\n"
-                                    f"Personagem: {persona.get('nome','')} — {persona.get('personalidade','')}.\n"
-                                    f"Critérios de aprovação nível {nivel}: {criterios_nivel[nivel]}\n\n"
-                                    f"Conversa:\n{hist_labia_txt}\n\n"
-                                    f"FORMATO:\n\n"
-                                    f"🏆 AVALIAÇÃO — NÍVEL {nivel}\n\n"
-                                    f"| Competência | Nota |\n|---|---|\n"
-                                    f"| 🗣️ Naturalidade | [X]/10 |\n"
-                                    f"| 🧠 Raciocínio | [X]/10 |\n"
-                                    f"| ⚡ Agilidade | [X]/10 |\n"
-                                    f"| 👂 Escuta | [X]/10 |\n"
-                                    f"| 🔄 Adaptação | [X]/10 |\n"
-                                    f"| ❓ Qualidade das perguntas | [X]/10 |\n\n"
-                                    f"⭐ NOTA GERAL: [X]/10\n\n"
-                                    f"RESULTADO: [APROVADO ✅ / REPROVADO ❌]\n\n"
-                                    f"🟢 O QUE VOCÊ FEZ MUITO BEM:\n[feedback específico]\n\n"
-                                    f"🟡 O QUE PODE MELHORAR:\n[feedback específico]\n\n"
-                                    f"🔴 SEU MAIOR ERRO:\n[o erro mais crítico — se houver]\n\n"
-                                    f"HABILIDADE QUE PRECISA DESENVOLVER: [1 habilidade específica em 1 linha]\n\n"
-                                    f"🎯 PRÓXIMO DESAFIO: [orientação para a próxima conversa]"
-                                )
-                                aval_l = conexa_ia(prompt_aval_l)
-
-                                # Detecta aprovação
-                                import re as re_mod2
-                                aprovado = "APROVADO" in aval_l and "REPROVADO" not in aval_l.split("APROVADO")[0]
-                                # Extrai habilidade a desenvolver
-                                hab_match = re_mod2.search(r"HABILIDADE QUE PRECISA DESENVOLVER:\s*(.+)", aval_l)
-                                hab = hab_match.group(1).strip() if hab_match else None
-
-                                if aprovado:
-                                    st.session_state.labia_nivel = min(nivel + 1, 7)
-                                    st.session_state.labia_falha_anterior = None
-                                    if nivel == 1 and "primeiro_passo" not in st.session_state.conquistas:
-                                        st.session_state.conquistas.append("primeiro_passo")
-                                    if nivel == 7 and "don_juan" not in st.session_state.conquistas:
-                                        st.session_state.conquistas.append("don_juan")
-                                else:
-                                    st.session_state.labia_falha_anterior = hab
-
-                                st.session_state.treinos_realizados += 1
-                                salvar_historico("Arte da Lábia", f"Nível {nivel} — {'✅' if aprovado else '❌'}", aval_l)
-                                st.session_state['labia_aval'] = (aval_l, aprovado)
-                                st.session_state.labia_personagem = None
-                                st.session_state.labia_chat = []
-                                st.rerun()
-                        else:
-                            st.warning(f"Complete pelo menos {cfg['turnos_min']} turnos antes de finalizar. Você tem {turno_usuario} turnos.")
-
-                with col_aband:
-                    if st.button("🔄 Novo", key="labia_novo"):
-                        st.session_state.labia_personagem = None
-                        st.session_state.labia_chat = []
+                with col_ab:
+                    if st.button("🚩 Sair", key="lj_sair", use_container_width=True):
+                        st.session_state.lj_ativo   = False
+                        st.session_state.lj_persona = None
+                        st.session_state.lj_chat    = []
                         st.rerun()
 
-        if st.session_state.get('labia_aval'):
-            aval_txt, aprovado = st.session_state['labia_aval']
-            cor_card = "card-green" if aprovado else "card-red"
-            st.markdown(f"<div class='{cor_card}'>{aval_txt}</div>", unsafe_allow_html=True)
-            if aprovado:
-                prox = FAIXAS[min(st.session_state.labia_nivel-1, 6)]
-                st.success(f"🏆 Aprovado! Próxima faixa: {prox[0]} {prox[2]}")
-            else:
-                st.info("❌ Não desta vez. Mas você ganhou um novo desafio com personagem diferente.")
-            if st.button("▶️ Continuar", key="labia_continuar"):
-                del st.session_state['labia_aval']; st.rerun()
+                # Auto-refresh a cada segundo
+                _time.sleep(0.8)
+                st.rerun()
 
-        with tab_h:
-            st.markdown("### 📜 Histórico de Personagens")
-            hist_p = st.session_state.get('historico_personagens', [])
-            if hist_p:
-                for i, p in enumerate(reversed(hist_p)):
-                    st.markdown(f"<div class='hist-item'><small style='color:#888;'>#{len(hist_p)-i}</small> {p}</div>", unsafe_allow_html=True)
-            else:
-                st.info("Nenhum personagem enfrentado ainda.")
-
-
-    # ──────────────────────────────────────────
-    # BIBLIOTECA
-    # ──────────────────────────────────────────
     elif st.session_state.pagina == "Biblioteca":
         st.header("📚 Biblioteca Inteligente")
         categorias = ["Todas","Respostas","Cartas na Manga","Mensagens Turbinadas","Análises","Primeiras conversas","Amizade","Networking","Perguntas"]
