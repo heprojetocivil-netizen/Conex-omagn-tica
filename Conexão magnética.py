@@ -993,23 +993,13 @@ elif st.session_state.etapa == "App":
 
             estado_label, estado_cor = estado_conexo(conexo)
 
-            # ── HEADER: CENÁRIO + TIMER ──
-            col_cen, col_tim = st.columns([4,1])
-            with col_cen:
-                st.markdown(f"""
-                <div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;padding:10px 14px;'>
-                    <strong style='color:#1A1A2E;'>📍 {persona.get('cenario','').capitalize()}</strong><br>
-                    <span style='font-size:0.8em;color:#4B5563;'>Você acaba de conhecer alguém.</span>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_tim:
-                st.markdown(f"""
-                <div style='background:#FFFFFF;border:2px solid {cor_timer};border-radius:10px;
-                padding:8px 10px;text-align:center;'>
-                    <div style='font-size:0.6em;color:#64748B;'>⏱️</div>
-                    <div style='font-size:1.6em;font-weight:700;color:{cor_timer};font-family:"Playfair Display",serif;'>{mins_r:02d}:{segs_r:02d}</div>
-                </div>
-                """, unsafe_allow_html=True)
+            # ── HEADER: SÓ CENÁRIO ──
+            st.markdown(f"""
+            <div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;padding:10px 14px;margin-bottom:12px;'>
+                <strong style='color:#1A1A2E;'>📍 {persona.get('cenario','').capitalize()}</strong>
+                <span style='font-size:0.82em;color:#4B5563;margin-left:8px;'>Você acaba de conhecer alguém.</span>
+            </div>
+            """, unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1108,7 +1098,7 @@ elif st.session_state.etapa == "App":
                 st.rerun()
 
             else:
-                # ── CONEXÔMETRO FIXO — sempre visível perto do input ──
+                # ── CONEXÔMETRO + TIMER — sempre visível perto do input ──
                 pct_con2 = conexo / 100
                 cor_con2 = "#22C55E" if conexo > 60 else ("#F59E0B" if conexo > 30 else "#EF4444")
                 estado_label2, _ = estado_conexo(conexo)
@@ -1120,6 +1110,8 @@ elif st.session_state.etapa == "App":
                         <div style='height:100%;border-radius:999px;background:{cor_con2};width:{conexo}%;'></div>
                     </div>
                     <span style='font-size:1em;font-weight:700;color:{cor_con2};white-space:nowrap;'>{conexo} &nbsp;{estado_label2}</span>
+                    <span style='font-size:0.75em;color:#64748B;white-space:nowrap;border-left:1px solid #E2E8F0;padding-left:12px;'>⏱️</span>
+                    <span style='font-size:1.1em;font-weight:700;color:{cor_timer};white-space:nowrap;font-family:"Playfair Display",serif;'>{mins_r:02d}:{segs_r:02d}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
