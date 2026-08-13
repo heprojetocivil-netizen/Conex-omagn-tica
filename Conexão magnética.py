@@ -1032,7 +1032,7 @@ elif st.session_state.etapa == "App":
                     f"EVITE COMPLETAMENTE estas combinações já usadas:\n"
                     f"- Cenários: {', '.join(set(cenarios_usados)) or 'nenhum'}\n"
                     f"- Profissões: {', '.join(set(profissoes_usadas)) or 'nenhuma'}\n"
-                    f"- Interesses: {', '.join(set(interesses_usados)[:10]) or 'nenhum'}\n"
+                    f"- Interesses: {', '.join(list(set(interesses_usados))[:10]) or 'nenhum'}\n"
                     f"- Assuntos principais: {', '.join(set(assuntos_usados)) or 'nenhum'}\n"
                     f"- Cidades: {', '.join(set(cidades_usadas)) or 'nenhuma'}\n"
                     f"- Aberturas similares a: {' | '.join(aberturas_usadas[-3:]) or 'nenhuma'}\n"
