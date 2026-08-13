@@ -1337,6 +1337,7 @@ elif st.session_state.etapa == "App":
                             comida_p   = persona.get('comida_favorita','')
                             serie_p    = persona.get('serie_favorita','')
                             inter_p    = ', '.join(persona.get('interesses',[]))
+                            genero_persona = persona.get('genero','feminino')
 
                             # Fatos fixos repetidos no final do system — o modelo não esquece
                             lembrete = (
