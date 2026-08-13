@@ -345,11 +345,41 @@ elif st.session_state.etapa == "App":
     nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("🎭2","Labia")]
     lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
            "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
-           "Roleplay":"Simulador de Conversa","Labia":"🎭 A Arte da Lábia"}
+           "Roleplay":"Simulador de Conversa","Labia":"🎭 A Arte da Lábia — EXCLUSIVO"}
     for i,(ic,pg) in enumerate(nav1):
         ch = list(lb1.keys())[i]
         if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
             st.session_state.pagina = ch; st.rerun()
+
+    # DESTAQUE — Arte da Lábia
+    st.markdown("""
+    <style>
+    @keyframes pulsar {
+        0%   { opacity: 1; transform: scale(1); }
+        50%  { opacity: 0.7; transform: scale(1.03); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes brilhar {
+        0%   { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
+        50%  { box-shadow: 0 0 22px rgba(255,105,180,0.9), 0 0 40px rgba(255,105,180,0.4); }
+        100% { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
+    }
+    .labia-destaque {
+        animation: pulsar 2s ease-in-out infinite, brilhar 2s ease-in-out infinite;
+        background: linear-gradient(135deg, #FF69B4, #C2185B);
+        border-radius: 12px;
+        padding: 10px 16px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 4px;
+    }
+    .stApp .labia-destaque, .stApp .labia-destaque p,
+    .stApp .labia-destaque span, .stApp .labia-destaque div { color: white !important; }
+    </style>
+    <div class='labia-destaque' onclick="window.location.reload()">
+        🎭 <strong>TORNE-SE UM SEDUTOR IMPARÁVEL</strong> &nbsp;·&nbsp; A Arte da Lábia &nbsp;·&nbsp; ⭐ TOP &nbsp;&nbsp;👆 Clique em 🎭 acima
+    </div>
+    """, unsafe_allow_html=True)
 
     # NAVBAR linha 2
     cols2 = st.columns(7)
@@ -863,6 +893,7 @@ elif st.session_state.etapa == "App":
         if 'lj_hist'     not in st.session_state: st.session_state.lj_hist     = []
         if 'lj_fraqueza' not in st.session_state: st.session_state.lj_fraqueza = None
         if 'lj_usados'   not in st.session_state: st.session_state.lj_usados   = []
+        if 'lj_contextos' not in st.session_state: st.session_state.lj_contextos = []
         if 'lj_ts_persona' not in st.session_state: st.session_state.lj_ts_persona = 0
         if 'lj_ts_usuario' not in st.session_state: st.session_state.lj_ts_usuario = 0
         if 'lj_recordes' not in st.session_state: st.session_state.lj_recordes = {"melhor_conexo":0,"maior_seq":0,"mais_arranques":0,"fases":0}
@@ -877,13 +908,28 @@ elif st.session_state.etapa == "App":
 
             st.markdown("## 🎭 A Arte da Lábia")
             st.markdown("*Aprenda a conversar sem travar, criar conexão e dominar qualquer conversa.*")
+
+            # ── CAMPO DE SENHA PARA DESBLOQUEIO TOTAL ──
+            with st.expander("🔑 Acesso especial"):
+                senha_input = st.text_input("Senha:", type="password", key="lj_senha_input")
+                if st.button("Desbloquear", key="lj_btn_senha"):
+                    if senha_input == "123":
+                        st.session_state.lj_desbloqueado = True
+                        st.success("✅ Todas as fases desbloqueadas!")
+                        st.rerun()
+                    else:
+                        st.error("Senha incorreta.")
+
+            if 'lj_desbloqueado' not in st.session_state:
+                st.session_state.lj_desbloqueado = False
+
             st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
             # PROGRESSÃO
             st.markdown("### 🏆 Sua Progressão")
             cols_fases = st.columns(7)
             for i, (n, emoji, nome, _, _hab) in enumerate(FASES_LABIA):
-                desbloqueada = n <= st.session_state.lj_fase
+                desbloqueada = n <= st.session_state.lj_fase or st.session_state.lj_desbloqueado
                 concluida    = n <  st.session_state.lj_fase
                 cor = "#22C55E" if concluida else ("#C2185B" if desbloqueada else "#E5E7EB")
                 lock = "✅" if concluida else ("🔓" if desbloqueada else "🔒")
@@ -940,9 +986,17 @@ elif st.session_state.etapa == "App":
             st.markdown(f"*{fase_info[3]}*")
             st.markdown(f"🎯 **Habilidade:** {fase_info[4]}")
 
-            col_g, col_i = st.columns([2,1])
+            col_g, col_f, col_i = st.columns([2,2,1])
             with col_g:
                 genero_sel = st.radio("Conversar com:", ["Mulher","Homem"], horizontal=True, key="lj_genero")
+            with col_f:
+                if st.session_state.lj_desbloqueado:
+                    fase_escolhida = st.selectbox("Escolher fase:",
+                        [f"Fase {n} — {nome}" for n,emoji,nome,_,_ in FASES_LABIA],
+                        index=st.session_state.lj_fase-1, key="lj_fase_sel")
+                    st.session_state.lj_fase = int(fase_escolhida.split()[1])
+                    fase_idx = st.session_state.lj_fase - 1
+                    fase_info = FASES_LABIA[min(fase_idx, 6)]
             with col_i:
                 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -962,22 +1016,98 @@ elif st.session_state.etapa == "App":
                 }[fase_n]
 
                 fraqueza_txt = f"O usuário falhou em: {st.session_state.lj_fraqueza}. Crie situações que testem isso." if st.session_state.lj_fraqueza else ""
-                usados_txt = ", ".join(st.session_state.lj_usados[-6:]) if st.session_state.lj_usados else "nenhum"
+                usados_txt = ", ".join(st.session_state.lj_usados[-8:]) if st.session_state.lj_usados else "nenhum"
 
-                cenarios = ["cafeteria","parque","livraria","fila de evento","shopping","feira","exposição","aeroporto","praça","academia","evento musical","aniversário"]
+                # Monta histórico detalhado para anti-repetição
+                ctx_hist = st.session_state.get("lj_contextos", [])
+                cenarios_usados = [x.get("cenario","") for x in ctx_hist]
+                profissoes_usadas = [x.get("profissao","") for x in ctx_hist]
+                interesses_usados = [i for x in ctx_hist for i in x.get("interesses",[])]
+                assuntos_usados = [x.get("assunto_ama","") for x in ctx_hist if x.get("assunto_ama")]
+                cidades_usadas = [x.get("cidade","") for x in ctx_hist if x.get("cidade")]
+                aberturas_usadas = [x.get("primeira_fala","")[:40] for x in ctx_hist if x.get("primeira_fala")]
+                hoje_usados = [x.get("algo_hoje","") for x in ctx_hist if x.get("algo_hoje")]
+
+                anti_rep = (
+                    f"EVITE COMPLETAMENTE estas combinações já usadas:\n"
+                    f"- Cenários: {', '.join(set(cenarios_usados)) or 'nenhum'}\n"
+                    f"- Profissões: {', '.join(set(profissoes_usadas)) or 'nenhuma'}\n"
+                    f"- Interesses: {', '.join(set(interesses_usados)[:10]) or 'nenhum'}\n"
+                    f"- Assuntos principais: {', '.join(set(assuntos_usados)) or 'nenhum'}\n"
+                    f"- Cidades: {', '.join(set(cidades_usadas)) or 'nenhuma'}\n"
+                    f"- Aberturas similares a: {' | '.join(aberturas_usadas[-3:]) or 'nenhuma'}\n"
+                    f"- Situações do dia similares a: {' | '.join(hoje_usados[-3:]) or 'nenhuma'}\n"
+                    f"Seja CRIATIVO e surpreendente — cada personagem deve abrir a conversa de forma única."
+                )
+
+                cenarios_todos = [
+                    "cafeteria","parque","livraria","fila de evento","shopping","feira",
+                    "exposição de arte","aeroporto","praça","academia","show de música",
+                    "festa de aniversário","mercado","galeria","coworking","food court",
+                    "banca de jornal","pet shop","sebo de livros","farmácia","bancada de bar",
+                    "fila de banco","salão de beleza","loja de discos","jardim botânico",
+                    "estação de metrô","calçadão","praia","aluguel de bicicletas","museu"
+                ]
+                # Remove cenários já usados para garantir variedade
+                cenarios_disponiveis = [x for x in cenarios_todos if x not in cenarios_usados]
+                if not cenarios_disponiveis:
+                    cenarios_disponiveis = cenarios_todos  # reset se usou todos
+                cenario = _random.choice(cenarios_disponiveis)
                 import random as _random
                 cenario = _random.choice(cenarios)
+
+                # Gera data de aniversário aleatória para o personagem
+                import random as _r2
+                meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"]
+                mes_aniv = _r2.choice(meses)
+                dia_aniv = _r2.randint(1, 28)
 
                 prompt_p = (
                     f"Crie um personagem fictício adulto de gênero {genero_str} para simulação social.\n"
                     f"Fase {fase_n}/7: {carac}\n"
                     f"Cenário: {cenario}.\n"
-                    f"Não repita: {usados_txt}. {fraqueza_txt}\n\n"
-                    f"RETORNE APENAS JSON válido (sem markdown):\n"
-                    f'{{"nome":"","genero":"{genero_str}","idade":0,"profissao":"","cidade":"","personalidade":{{"extroversao":0,"humor":0,"curiosidade":0,"paciencia":0,"confianca":0,"seletividade":0}},'
-                    f'"interesses":[],"musica":"","esporte":"","estilo_fala":"","nivel_dificuldade":{fase_n},'
-                    f'"cenario":"{cenario}","primeira_fala":""}}\n\n'
-                    f"primeira_fala: 1-2 frases curtas, naturais, contextuais ao cenário. Não diga 'oi tudo bem'. Seja criativa."
+                    f"Não repita combinações já usadas: {usados_txt}. {fraqueza_txt}\n"
+                    f"{anti_rep}\n\n"
+                    f"O personagem deve parecer uma PESSOA REAL com vida própria, não um NPC de jogo.\n\n"
+                    f"RETORNE APENAS JSON válido (sem markdown, sem explicações fora do JSON):\n"
+                    f'{{\n'
+                    f'  "nome": "",\n'
+                    f'  "genero": "{genero_str}",\n'
+                    f'  "idade": 0,\n'
+                    f'  "profissao": "",\n'
+                    f'  "cidade": "",\n'
+                    f'  "aniversario": "{dia_aniv} de {mes_aniv}",\n'
+                    f'  "personalidade": {{"extroversao":0,"humor":0,"curiosidade":0,"paciencia":0,"confianca":0,"seletividade":0}},\n'
+                    f'  "interesses": [],\n'
+                    f'  "musica": "",\n'
+                    f'  "esporte": "",\n'
+                    f'  "comida_favorita": "",\n'
+                    f'  "serie_favorita": "",\n'
+                    f'  "filme_favorito": "",\n'
+                    f'  "livro_favorito": "",\n'
+                    f'  "viagem_sonho": "",\n'
+                    f'  "maior_medo": "",\n'
+                    f'  "maior_paixao": "",\n'
+                    f'  "jeito_de_falar": "",\n'
+                    f'  "expressoes_proprias": [],\n'
+                    f'  "reacao_elogio": "",\n'
+                    f'  "reacao_piada": "",\n'
+                    f'  "reacao_provocacao": "",\n'
+                    f'  "assunto_que_ama": "",\n'
+                    f'  "assunto_que_odeia": "",\n'
+                    f'  "algo_que_aconteceu_hoje": "",\n'
+                    f'  "contexto_vida_atual": "",\n'
+                    f'  "estilo_fala": "",\n'
+                    f'  "nivel_dificuldade": {fase_n},\n'
+                    f'  "cenario": "{cenario}",\n'
+                    f'  "primeira_fala": ""\n'
+                    f'}}\n\n'
+                    f"INSTRUÇÕES IMPORTANTES:\n"
+                    f"- expressoes_proprias: 3-5 expressões que só essa pessoa usa (ex: 'cara demais', 'sério?!', 'olha só')\n"
+                    f"- algo_que_aconteceu_hoje: algo pequeno e real do dia dela (ex: 'derramei café na blusa', 'atrasou o ônibus')\n"
+                    f"- contexto_vida_atual: o que está acontecendo na vida dela agora (ex: 'mudando de emprego', 'planejando viagem')\n"
+                    f"- reacao_elogio/piada/provocacao: como ela reage emocionalmente (ex: 'fica levemente corada', 'ri alto', 'ergue sobrancelha')\n"
+                    f"- primeira_fala: 1-2 frases humanas e contextuais. Pode incluir algo do 'algo_que_aconteceu_hoje'."
                 )
                 with st.spinner("Criando personagem..."):
                     p_txt = conexa_ia(prompt_p)
@@ -994,9 +1124,25 @@ elif st.session_state.etapa == "App":
                     }
                     persona = defaults_f[genero_str]
 
-                # Registra anti-repetição
+                # Registra anti-repetição — granular
                 registro = f"{persona.get('nome','')} / {persona.get('profissao','')} / {cenario}"
                 st.session_state.lj_usados.append(registro)
+
+                # Salva contexto detalhado para impedir repetição de assuntos/abertura
+                ctx_salvo = {
+                    "cenario": cenario,
+                    "profissao": persona.get("profissao",""),
+                    "interesses": persona.get("interesses",[]),
+                    "assunto_ama": persona.get("assunto_que_ama",""),
+                    "algo_hoje": persona.get("algo_que_aconteceu_hoje",""),
+                    "primeira_fala": persona.get("primeira_fala",""),
+                    "musica": persona.get("musica",""),
+                    "cidade": persona.get("cidade",""),
+                }
+                st.session_state.lj_contextos.append(ctx_salvo)
+                # Mantém só os últimos 10
+                if len(st.session_state.lj_contextos) > 10:
+                    st.session_state.lj_contextos = st.session_state.lj_contextos[-10:]
 
                 # Inicia partida
                 st.session_state.lj_persona   = persona
@@ -1184,23 +1330,75 @@ elif st.session_state.etapa == "App":
 
                             # System do personagem
                             pers = persona.get('personalidade',{})
+                            aniv_p     = persona.get('aniversario','data não definida')
+                            nome_p2    = persona.get('nome','?')
+                            prof_p     = persona.get('profissao','')
+                            cidade_p   = persona.get('cidade','')
+                            musica_p   = persona.get('musica','')
+                            comida_p   = persona.get('comida_favorita','')
+                            serie_p    = persona.get('serie_favorita','')
+                            inter_p    = ', '.join(persona.get('interesses',[]))
+
+                            # Fatos fixos repetidos no final do system — o modelo não esquece
+                            lembrete = (
+                                f"\n\nSEUS DADOS FIXOS (nunca mude nem contradiga):\n"
+                                f"Nome: {nome_p2} | Profissão: {prof_p} | Cidade: {cidade_p}\n"
+                                f"Aniversário: {aniv_p}\n"
+                                f"Música: {musica_p} | Comida: {comida_p} | Série: {serie_p}\n"
+                                f"Interesses: {inter_p}"
+                            )
+
+                            # Detecta pergunta pessoal → injeta aviso extra
+                            kws_pessoal = ['aniversário','aniversario','nasce','cidade','mora',
+                                           'música','musica','série','serie','comida','come',
+                                           'trabalha','profissão','profissao','chama']
+                            eh_pessoal = any(k in msg_labia.lower() for k in kws_pessoal)
+                            aviso_pessoal = (
+                                f"\n⚠️ ATENÇÃO: pergunta pessoal detectada. "
+                                f"Responda EXATAMENTE conforme seus dados: "
+                                f"Aniversário={aniv_p}, Cidade={cidade_p}, Profissão={prof_p}."
+                            ) if eh_pessoal else ""
+
                             system_p = (
-                                f"Você é {persona.get('nome','?')}, {persona.get('idade',25)} anos, {persona.get('profissao','')}.\n"
-                                f"Personalidade: extroversão {pers.get('extroversao',7)}/10, humor {pers.get('humor',7)}/10, "
-                                f"confiança {pers.get('confianca',7)}/10, seletividade {pers.get('seletividade',3)}/10.\n"
-                                f"Interesses: {', '.join(persona.get('interesses',[]))}. Música: {persona.get('musica','')}.\n"
-                                f"Estilo: {persona.get('estilo_fala','')}. Cenário: {persona.get('cenario','')}.\n"
-                                f"Fase {fase_n}/7 — dificuldade: {FASES_LABIA[min(fase_n-1,6)][2]}.\n\n"
-                                f"REGRAS ABSOLUTAS:\n"
-                                f"- Responda COMO ESSA PESSOA, não como IA\n"
-                                f"- MÁXIMO 1-2 frases (5-40 palavras)\n"
-                                f"- NÃO termine sempre com pergunta\n"
-                                f"- Você pode: comentar, brincar, discordar, provocar, contar algo, reagir, ficar em silêncio\n"
-                                f"- {'Seja receptiva e facilite levemente' if fase_n<=2 else 'NÃO facilite artificialmente'}\n"
-                                f"- Se a pergunta for artificial ou entrevista, reaja com menos entusiasmo\n"
-                                f"- Mantenha memória de TUDO que foi dito\n"
-                                f"- NUNCA revele que é uma IA ou que existe um jogo\n"
-                                f"- Zero prolixidade. Se tiver pouco a dizer, diga pouco."
+                                f"Você é {nome_p2}, {persona.get('idade',25)} anos.\n"
+                                f"NUNCA quebre o personagem. Nunca mencione IA, jogo ou treinamento.\n\n"
+                                f"=== SUA IDENTIDADE COMPLETA (MEMORIZE TUDO) ===\n"
+                                f"Nome: {nome_p2} | Gênero: {genero_persona} | Idade: {persona.get('idade',25)}\n"
+                                f"Profissão: {prof_p} | Cidade: {cidade_p}\n"
+                                f"Aniversário: {aniv_p}\n"
+                                f"Música: {musica_p} | Esporte: {persona.get('esporte','')}\n"
+                                f"Comida favorita: {comida_p} | Série: {serie_p}\n"
+                                f"Filme favorito: {persona.get('filme_favorito','')}\n"
+                                f"Livro favorito: {persona.get('livro_favorito','')}\n"
+                                f"Viagem dos sonhos: {persona.get('viagem_sonho','')}\n"
+                                f"Maior paixão: {persona.get('maior_paixao','')}\n"
+                                f"Maior medo: {persona.get('maior_medo','')}\n"
+                                f"Assunto que ama: {persona.get('assunto_que_ama','')}\n"
+                                f"Assunto que odeia: {persona.get('assunto_que_odeia','')}\n"
+                                f"Interesses: {inter_p}\n"
+                                f"O que aconteceu com você hoje: {persona.get('algo_que_aconteceu_hoje','')}\n"
+                                f"Contexto de vida atual: {persona.get('contexto_vida_atual','')}\n\n"
+                                f"=== SEU JEITO DE SER ===\n"
+                                f"Estilo: {persona.get('jeito_de_falar','')}\n"
+                                f"Expressões que você usa: {', '.join(persona.get('expressoes_proprias',[]))}\n"
+                                f"Quando te elogiam: {persona.get('reacao_elogio','')}\n"
+                                f"Quando fazem piada: {persona.get('reacao_piada','')}\n"
+                                f"Quando te provocam: {persona.get('reacao_provocacao','')}\n"
+                                f"Fase de dificuldade: {fase_n}/7 — {FASES_LABIA[min(fase_n-1,6)][2]}\n\n"
+                                f"=== COMO VOCÊ CONVERSA ===\n"
+                                f"- Você É essa pessoa. Vive no cenário: {persona.get('cenario','')}\n"
+                                f"- Respostas CURTAS — 1 a 2 frases, no máximo 40 palavras\n"
+                                f"- Use suas expressões próprias naturalmente\n"
+                                f"- Reaja emocionalmente quando fizer sentido: surpresa, risada, discordância\n"
+                                f"- Pessoas reais NÃO terminam toda fala com pergunta\n"
+                                f"- Você pode: comentar, discordar, brincar, contar algo, provocar, ignorar, mudar de assunto\n"
+                                f"- Se te perguntarem algo pessoal, responda conforme sua identidade acima\n"
+                                f"- Se a pessoa fizer 3+ perguntas seguidas, reaja: 'Isso é entrevista de emprego? 😂'\n"
+                                f"- Mostre personalidade: você tem opiniões, preferências, histórias\n"
+                                f"- {'Seja aberta e receptiva, facilite um pouco a conversa' if fase_n<=2 else 'Não facilite — deixe a pessoa trabalhar para manter a conversa'}\n"
+                                f"- Às vezes reaja com emoção visível: 'Nossa, sério?!' / 'Que coincidência!' / 'Isso me lembra...'\n"
+                                f"- Lembre de TUDO que foi dito anteriormente — não repita perguntas já feitas"
+                                + aviso_pessoal
                             )
                             historico = [{"role":m["role"],"content":m["content"]} for m in chat]
                             with st.spinner(""):
@@ -1212,22 +1410,43 @@ elif st.session_state.etapa == "App":
                                 except Exception as e:
                                     resp_txt = "Interessante."
 
+                                                        # Efeito de digitação — exibe palavra por palavra
+                            nome_p = persona.get('nome','?')
+                            rosto_p = ROSTOS_F.get(fase_n,"🙂") if genero_persona=='feminino' else ROSTOS_M.get(fase_n,"🙂")
+                            placeholder_dig = st.empty()
+                            palavras_resp = resp_txt.split()
+                            texto_acumulado = ""
+                            for palavra in palavras_resp:
+                                texto_acumulado += ("" if texto_acumulado=="" else " ") + palavra
+                                placeholder_dig.markdown(
+                                    f"<div class='chat-persona'><b style='color:#1D4ED8;'>{rosto_p} {nome_p}:</b> {texto_acumulado}▌</div>",
+                                    unsafe_allow_html=True
+                                )
+                                _time.sleep(0.06)
+                            placeholder_dig.empty()  # limpa — o chat vai rerender com st.rerun()
+
                             # ── AVALIAR RESPOSTA E ATUALIZAR CONEXÔMETRO ──
+                            # Generosidade crescente por fase
+                            gen = {1:"MUITO GENEROSO: fase iniciante, qualquer resposta sincera merece +3 a +15. Só penalize erros graves.",
+                                   2:"GENEROSO: credito ao esforco, penalize so entrevista de perguntas.",
+                                   3:"MODERADO: exija naturalidade.",
+                                   4:"EXIGENTE: naturalidade e confianca obrigatorias.",
+                                   5:"RIGOROSO: adaptacao essencial.",
+                                   6:"MUITO RIGOROSO: profundidade e sem artificialidade.",
+                                   7:"MAXIMO: so respostas excepcionais ganham pontos."}[min(fase_n,7)]
+
                             prompt_eval = (
-                                f"Avalie a última resposta do usuário nesta conversa de treinamento social.\n"
-                                f"Fase: {fase_n}/7. Personagem: {FASES_LABIA[min(fase_n-1,6)][2]}.\n"
-                                f"Tempo de resposta: {tempo_resposta:.1f}s.\n"
-                                f"Últimas falas:\n"
-                                f"Personagem: {chat[-1]['content'] if chat else ''}\n"
-                                f"Usuário: {msg_labia}\n\n"
-                                f"RETORNE JSON (sem markdown):\n"
-                                f'{{"delta":-15,"arranque":"","tipo_arranque":""}}\n\n'
-                                f"delta: número entre -30 e +25 (positivo=bom, negativo=ruim).\n"
-                                f"arranque: string curta SE delta>10 (ex: '🎯 +14 GANCHO PERFEITO'), senão string vazia.\n"
-                                f"tipo_arranque: categoria do arranque se houver, senão vazio.\n"
-                                f"Critérios: naturalidade, aproveitamento de gancho, humor, reciprocidade, adaptação, tempo.\n"
-                                f"Penalizar: monossilábicos, sequência de perguntas, ignorar contexto, forçar impressionar.\n"
-                                f"Tempo > 15s penaliza levemente (fase {fase_n}, peso {10+fase_n*5}%)."
+                                f"Avalie a ultima resposta do usuario em conversa de treinamento social.\n"
+                                f"Fase {fase_n}/7. Criterio: {gen}\n"
+                                f"Personagem: {FASES_LABIA[min(fase_n-1,6)][2]}.\n"
+                                f"Tempo resposta: {tempo_resposta:.1f}s.\n"
+                                f"Personagem disse: {chat[-1]['content'] if chat else ''}\n"
+                                f"Usuario respondeu: {msg_labia}\n\n"
+                                f"RETORNE JSON sem markdown:\n"
+                                f'{{"delta":0,"arranque":"","tipo_arranque":""}}\n\n'
+                                f"delta: -30 a +25. Fase 1 tende positivo (+3 a +15) para respostas razoaveis.\n"
+                                f"arranque: se delta>8 gere string curta ex '🎯 +12 GANCHO PERFEITO', senao vazio.\n"
+                                f"Penalizar: monossílabos repetidos, sequencia de perguntas, ignorar contexto."
                             )
                             with st.spinner(""):
                                 try:
