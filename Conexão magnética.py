@@ -37,22 +37,22 @@ st.markdown("""
 
     .stApp h1, .stApp h2, .stApp h3 { font-family: 'Playfair Display', serif !important; color: #1A1A2E !important; }
 
-    .card { background:linear-gradient(135deg,#FFF5F7,#FFF0F5); padding:22px; border-radius:16px; border:1px solid #FFD1DC; margin-bottom:15px; white-space:pre-wrap; box-shadow:0 2px 12px rgba(255,105,180,0.08); }
+    .card { background:linear-gradient(135deg,#FFF5F7,#FFF0F5); padding:22px; border-radius:16px; border:1px solid #FFD1DC; margin-bottom:15px; white-space:normal; word-wrap:break-word; box-shadow:0 2px 12px rgba(255,105,180,0.08); }
     .stApp .card, .stApp .card p, .stApp .card span, .stApp .card div, .stApp .card strong, .stApp .card em { color:#1A1A2E !important; }
 
-    .card-dark { background:linear-gradient(135deg,#2D0A1A,#1A0010); padding:22px; border-radius:16px; border:1px solid #FF69B4; margin-bottom:15px; white-space:pre-wrap; }
+    .card-dark { background:linear-gradient(135deg,#2D0A1A,#1A0010); padding:22px; border-radius:16px; border:1px solid #FF69B4; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
     .stApp .card-dark, .stApp .card-dark p, .stApp .card-dark span, .stApp .card-dark div, .stApp .card-dark strong, .stApp .card-dark em { color:#FFD1DC !important; }
 
-    .card-green { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); padding:22px; border-radius:16px; border:1px solid #86EFAC; margin-bottom:15px; white-space:pre-wrap; }
+    .card-green { background:linear-gradient(135deg,#F0FDF4,#DCFCE7); padding:22px; border-radius:16px; border:1px solid #86EFAC; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
     .stApp .card-green, .stApp .card-green p, .stApp .card-green span, .stApp .card-green div, .stApp .card-green strong { color:#14532D !important; }
 
-    .card-blue { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); padding:22px; border-radius:16px; border:1px solid #93C5FD; margin-bottom:15px; white-space:pre-wrap; }
+    .card-blue { background:linear-gradient(135deg,#EFF6FF,#DBEAFE); padding:22px; border-radius:16px; border:1px solid #93C5FD; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
     .stApp .card-blue, .stApp .card-blue p, .stApp .card-blue span, .stApp .card-blue div { color:#1E3A8A !important; }
 
-    .card-red { background:linear-gradient(135deg,#FFF5F5,#FEE2E2); padding:22px; border-radius:16px; border:2px solid #FECACA; margin-bottom:15px; white-space:pre-wrap; }
+    .card-red { background:linear-gradient(135deg,#FFF5F5,#FEE2E2); padding:22px; border-radius:16px; border:2px solid #FECACA; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
     .stApp .card-red, .stApp .card-red p, .stApp .card-red span, .stApp .card-red div { color:#7F1D1D !important; }
 
-    .card-yellow { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:22px; border-radius:16px; border:1px solid #FCD34D; margin-bottom:15px; white-space:pre-wrap; }
+    .card-yellow { background:linear-gradient(135deg,#FFFBEB,#FEF3C7); padding:22px; border-radius:16px; border:1px solid #FCD34D; margin-bottom:15px; white-space:normal; word-wrap:break-word; }
     .stApp .card-yellow, .stApp .card-yellow p, .stApp .card-yellow span, .stApp .card-yellow div { color:#78350F !important; }
 
     .painel-conexa { background:linear-gradient(135deg,#2D0A1A,#1A0010); border:2px solid #FF69B4; border-radius:20px; padding:24px; margin-bottom:20px; }
@@ -75,7 +75,7 @@ st.markdown("""
 
     .stat-box { background:#FFF0F5; border-radius:12px; padding:18px; text-align:center; border:1px solid #FFD1DC; }
     .stApp .stat-box div, .stApp .stat-box span, .stApp .stat-box p { color:#1A1A2E !important; }
-    .stApp .stat-numero, .stat-numero { font-size:2em; font-weight:700; color:#FF69B4 !important; font-family:'Playfair Display',serif; }
+    .stApp .stat-numero, .stat-numero { font-size:2em; font-weight:700; color:#C2185B !important; font-family:'Playfair Display',serif; }
 
     .hist-item { background:#FFF8FA; border-radius:10px; padding:12px 16px; margin-bottom:8px; border-left:4px solid #FFB6C1; }
     .stApp .hist-item, .stApp .hist-item p, .stApp .hist-item span, .stApp .hist-item div, .stApp .hist-item small { color:#1A1A2E !important; }
@@ -429,7 +429,7 @@ elif st.session_state.etapa == "App":
             ("Escuta", st.session_state.escuta),
         ]
         for nome_m, val in metricas:
-            cor = "#22C55E" if val >= 7 else ("#F59E0B" if val >= 4 else "#EF4444")
+            cor = "#22C55E" if val >= 7 else ("#B45309" if val >= 4 else "#B91C1C")
             st.markdown(f"""
             <div style='margin-bottom:10px;'>
                 <div style='display:flex;justify-content:space-between;font-size:0.88em;font-weight:600;color:#1A1A2E;'>
@@ -799,9 +799,44 @@ elif st.session_state.etapa == "App":
 
         DURACAO_FASES = {1:300,2:300,3:300,4:300,5:300,6:300,7:300}  # 5 min cada
 
+        # Rostos por personalidade (feminino / masculino)
+        ROSTOS_F = {
+            1: "🙂",   # Modesta — tímida, discreta
+            2: "😏",   # Atrevida — confiante, provocadora
+            3: "😎",   # Deusa do Bairro — segura, estilosa
+            4: "🧐",   # Inalcançável — analítica, seletiva
+            5: "😈",   # Perigosa — imprevisível
+            6: "🤨",   # Raridade — perspicaz, observadora
+            7: "👑",   # Lenda — suprema confiança
+        }
+        ROSTOS_M = {
+            1: "🙂",   # Modesto
+            2: "😏",   # Atrevido
+            3: "😎",   # O Popular
+            4: "🧐",   # O Seletivo
+            5: "😈",   # O Imprevisível
+            6: "🤨",   # O Perspicaz
+            7: "👑",   # O Lendário
+        }
+
+        # Regras de inatividade por fase (segundos sem digitar → queda no Conexômetro)
+        # Mais generoso nas fases iniciais, mais rigoroso nas avançadas
+        INATIVIDADE_REGRAS = {
+            1: {"limite": 60, "queda": 3,  "msg": ""},           # 1 min → -3 (quase não penaliza)
+            2: {"limite": 50, "queda": 5,  "msg": ""},
+            3: {"limite": 40, "queda": 8,  "msg": "⚠️ Ela está esperando..."},
+            4: {"limite": 35, "queda": 10, "msg": "⚠️ Ela está perdendo o interesse."},
+            5: {"limite": 30, "queda": 12, "msg": "⚠️ A conversa está esfriando."},
+            6: {"limite": 25, "queda": 15, "msg": "⚠️ Ela está olhando para outro lado."},
+            7: {"limite": 20, "queda": 18, "msg": "⚠️ Ela já está pensando em ir embora."},
+        }
+
+        # Mínimos de turnos para aprovação por fase
+        TURNOS_MIN_APROVACAO = {1:4, 2:5, 3:6, 4:6, 5:7, 6:7, 7:8}
+
         ESTADOS_CONEXO = [
             (80,  "🔥 CONEXÃO FORTE",    "#DC2626"),
-            (60,  "❤️ BOA QUÍMICA",      "#F59E0B"),
+            (60,  "❤️ BOA QUÍMICA",      "#B45309"),
             (40,  "😐 NEUTRO",           "#64748B"),
             (20,  "⚠️ INTERESSE CAINDO", "#EA580C"),
             (1,   "🚨 ÚLTIMA CHANCE",    "#7F1D1D"),
@@ -829,6 +864,7 @@ elif st.session_state.etapa == "App":
         if 'lj_fraqueza' not in st.session_state: st.session_state.lj_fraqueza = None
         if 'lj_usados'   not in st.session_state: st.session_state.lj_usados   = []
         if 'lj_ts_persona' not in st.session_state: st.session_state.lj_ts_persona = 0
+        if 'lj_ts_usuario' not in st.session_state: st.session_state.lj_ts_usuario = 0
         if 'lj_recordes' not in st.session_state: st.session_state.lj_recordes = {"melhor_conexo":0,"maior_seq":0,"mais_arranques":0,"fases":0}
 
         fase_idx = st.session_state.lj_fase - 1
@@ -849,7 +885,7 @@ elif st.session_state.etapa == "App":
             for i, (n, emoji, nome, _, _hab) in enumerate(FASES_LABIA):
                 desbloqueada = n <= st.session_state.lj_fase
                 concluida    = n <  st.session_state.lj_fase
-                cor = "#22C55E" if concluida else ("#FF69B4" if desbloqueada else "#E5E7EB")
+                cor = "#22C55E" if concluida else ("#C2185B" if desbloqueada else "#E5E7EB")
                 lock = "✅" if concluida else ("🔓" if desbloqueada else "🔒")
                 with cols_fases[i]:
                     st.markdown(f"""
@@ -973,6 +1009,7 @@ elif st.session_state.etapa == "App":
                 st.session_state.lj_combo     = 0
                 st.session_state.lj_aval      = None
                 st.session_state.lj_ts_persona = _time.time()
+                st.session_state.lj_ts_usuario = 0
                 st.rerun()
 
         # ══════════════════════════════════════
@@ -989,7 +1026,7 @@ elif st.session_state.etapa == "App":
             mins_r    = int(restante // 60)
             segs_r    = int(restante % 60)
             pct_tempo = max(0.0, 1 - decorrido / duracao)
-            cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#F59E0B" if pct_tempo > 0.2 else "#EF4444")
+            cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#B45309" if pct_tempo > 0.2 else "#B91C1C")
 
             estado_label, estado_cor = estado_conexo(conexo)
 
@@ -1004,18 +1041,37 @@ elif st.session_state.etapa == "App":
             st.markdown("<br>", unsafe_allow_html=True)
 
             # ── CHAT ──
+            genero_p = persona.get('genero','feminino')
+            rosto = ROSTOS_F.get(fase_n,"🙂") if genero_p == 'feminino' else ROSTOS_M.get(fase_n,"🙂")
+
             for msg in chat:
                 if msg['role'] == 'user':
                     st.markdown(f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
                 else:
-                    # Arranque se houver
                     arr = msg.get('arranque')
                     if arr:
                         st.markdown(f"<div style='text-align:right;font-size:0.8em;color:#22C55E;font-weight:600;margin-bottom:2px;'>{arr}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>{persona.get('nome','?')}:</b> {msg['content']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>{rosto} {persona.get('nome','?')}:</b> {msg['content']}</div>", unsafe_allow_html=True)
+
+            # ── QUEDA POR INATIVIDADE ──
+            regra_inat = INATIVIDADE_REGRAS[min(fase_n, 7)]
+            ts_u = st.session_state.lj_ts_usuario
+            ts_p = st.session_state.lj_ts_persona
+            # Só aplica se o personagem já falou (ts_p > 0) e o usuário não respondeu ainda
+            if ts_p > 0 and ts_u < ts_p:
+                inatividade_seg = _time.time() - ts_p
+                if inatividade_seg > regra_inat["limite"]:
+                    # Aplica queda proporcional — a cada ciclo de "limite" segundos
+                    ciclos = int(inatividade_seg / regra_inat["limite"])
+                    queda_total = min(ciclos * regra_inat["queda"], 20)  # máx -20 por ciclo
+                    novo_conexo = max(0, conexo - queda_total)
+                    if novo_conexo != conexo:
+                        st.session_state.lj_conexo = novo_conexo
+                        if regra_inat["msg"]:
+                            st.markdown(f"<div class='card-yellow' style='padding:8px 14px;font-size:0.83em;'>{regra_inat['msg']}</div>", unsafe_allow_html=True)
 
             # Alerta última chance
-            if 0 < conexo <= 20:
+            if 0 < st.session_state.lj_conexo <= 20:
                 st.markdown("<div class='card-red' style='padding:10px 14px;font-size:0.88em;'>🚨 <strong>ÚLTIMA CHANCE</strong> — A conversa está esfriando. Mude de rota.</div>", unsafe_allow_html=True)
 
             # Dica nível 1 e 2
@@ -1027,7 +1083,7 @@ elif st.session_state.etapa == "App":
 
             # Combo
             if st.session_state.lj_combo >= 3:
-                st.markdown(f"<div style='text-align:center;font-size:0.9em;font-weight:700;color:#F59E0B;'>🔥 COMBO x{st.session_state.lj_combo}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='text-align:center;font-size:0.9em;font-weight:700;color:#B45309;'>🔥 COMBO x{st.session_state.lj_combo}</div>", unsafe_allow_html=True)
 
             # ── VERIFICAR FIM ──
             tempo_esgotado = restante <= 0
@@ -1060,7 +1116,8 @@ elif st.session_state.etapa == "App":
                     except:
                         aval_d = {}
 
-                aprovado = (conexo > 0 and aval_d.get('aprovado', conexo >= 50))
+                aprovado = (conexo > 0 and aval_d.get('aprovado', conexo >= 50)
+                            and turno_u >= TURNOS_MIN_APROVACAO.get(fase_n, 4))
 
                 # Atualizar recordes
                 rec = st.session_state.lj_recordes
@@ -1100,7 +1157,7 @@ elif st.session_state.etapa == "App":
             else:
                 # ── CONEXÔMETRO + TIMER — sempre visível perto do input ──
                 pct_con2 = conexo / 100
-                cor_con2 = "#22C55E" if conexo > 60 else ("#F59E0B" if conexo > 30 else "#EF4444")
+                cor_con2 = "#22C55E" if conexo > 60 else ("#B45309" if conexo > 30 else "#B91C1C")
                 estado_label2, _ = estado_conexo(conexo)
                 st.markdown(f"""
                 <div style='background:#FFFFFF;border:2px solid {cor_con2};border-radius:10px;
@@ -1207,6 +1264,7 @@ elif st.session_state.etapa == "App":
                             chat.append({"role":"user","content":msg_labia,"ts":ts_user,"delta":delta})
                             chat.append({"role":"assistant","content":resp_txt,"ts":_time.time(),"arranque":arranque})
                             st.session_state.lj_chat = chat
+                            st.session_state.lj_ts_usuario = ts_user  # registra último envio
                             st.rerun()
 
                 with col_ab:
