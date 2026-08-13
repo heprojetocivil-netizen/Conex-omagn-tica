@@ -993,28 +993,13 @@ elif st.session_state.etapa == "App":
 
             estado_label, estado_cor = estado_conexo(conexo)
 
-            # ── HEADER: CENÁRIO + CONEXÔMETRO + TIMER ──
-            col_cen, col_con, col_tim = st.columns([3,2,1])
+            # ── HEADER: CENÁRIO + TIMER ──
+            col_cen, col_tim = st.columns([4,1])
             with col_cen:
                 st.markdown(f"""
                 <div style='background:#FFF0F5;border:1px solid #FFB6C1;border-radius:10px;padding:10px 14px;'>
                     <strong style='color:#1A1A2E;'>📍 {persona.get('cenario','').capitalize()}</strong><br>
                     <span style='font-size:0.8em;color:#4B5563;'>Você acaba de conhecer alguém.</span>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_con:
-                pct_con = conexo / 100
-                cor_con = "#22C55E" if conexo>60 else ("#F59E0B" if conexo>30 else "#EF4444")
-                st.markdown(f"""
-                <div style='background:#FFFFFF;border:2px solid {cor_con};border-radius:10px;padding:8px 12px;'>
-                    <div style='font-size:0.65em;color:#64748B;letter-spacing:1px;'>❤️ CONEXÔMETRO</div>
-                    <div style='display:flex;align-items:center;gap:8px;margin-top:2px;'>
-                        <div style='flex:1;background:#F1F5F9;border-radius:999px;height:8px;overflow:hidden;'>
-                            <div style='height:100%;border-radius:999px;background:{cor_con};width:{conexo}%;'></div>
-                        </div>
-                        <span style='font-size:1.1em;font-weight:700;color:{cor_con};'>{conexo}</span>
-                    </div>
-                    <div style='font-size:0.72em;color:{cor_con};font-weight:600;margin-top:2px;'>{estado_label}</div>
                 </div>
                 """, unsafe_allow_html=True)
             with col_tim:
@@ -1123,6 +1108,21 @@ elif st.session_state.etapa == "App":
                 st.rerun()
 
             else:
+                # ── CONEXÔMETRO FIXO — sempre visível perto do input ──
+                pct_con2 = conexo / 100
+                cor_con2 = "#22C55E" if conexo > 60 else ("#F59E0B" if conexo > 30 else "#EF4444")
+                estado_label2, _ = estado_conexo(conexo)
+                st.markdown(f"""
+                <div style='background:#FFFFFF;border:2px solid {cor_con2};border-radius:10px;
+                padding:8px 16px;margin-bottom:6px;display:flex;align-items:center;gap:12px;'>
+                    <span style='font-size:0.78em;color:#64748B;font-weight:600;white-space:nowrap;'>❤️ CONEXÔMETRO</span>
+                    <div style='flex:1;background:#F1F5F9;border-radius:999px;height:10px;overflow:hidden;'>
+                        <div style='height:100%;border-radius:999px;background:{cor_con2};width:{conexo}%;'></div>
+                    </div>
+                    <span style='font-size:1em;font-weight:700;color:{cor_con2};white-space:nowrap;'>{conexo} &nbsp;{estado_label2}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
                 # ── INPUT ──
                 msg_labia = st.text_input("", key=f"lj_input_{len(chat)}", placeholder="O que você diz?", label_visibility="collapsed")
 
