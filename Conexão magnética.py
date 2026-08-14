@@ -216,6 +216,25 @@ defaults = {
     'labia_nivel': 1, 'labia_chat': [], 'labia_personagem': None,
     'labia_falha_anterior': None, 'objetivos_usuario': [],
     'labia_inicio': 0, 'labia_duracao': 180, 'labia_encerrado': False,
+    # Mestre da Lábia
+    'lj_fase': 1, 'lj_personagem_sel': 'Rafaela',
+    'lj_ativo': False, 'lj_chat': [], 'lj_conexo': 100,
+    'lj_atributos': {'interesse':50,'atracao':50,'conexao':50,'confianca':50,'naturalidade':50,'curiosidade':50,'tensao':20},
+    'lj_inicio': 0, 'lj_duracao': 300,
+    'lj_missao': '', 'lj_missao_cumprida': False,
+    'lj_aval': None, 'lj_arranques': [],
+    'lj_historico_cenarios': [], 'lj_historico_aberturas': [],
+    'lj_ts_persona': 0, 'lj_ts_usuario': 0,
+    'lj_combo': 0,
+    'lj_fases_concluidas': 0,
+    'lj_titulo': 'Paquerador',
+    'lj_personagens_desbloqueadas': ['Rafaela'],
+    'lj_perfil_estilo': None,
+    'lj_historico_partidas': [],
+    'lj_desbloqueado': False,
+    'lj_ficha': {}, 'lj_ficha_resumo': '',
+    'lj_nome_persona': '', 'lj_dados_persona': {},
+    'lj_cenario': '', 'lj_cenario_label': '',
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -266,6 +285,65 @@ def barra_salvar():
 # ============================================================
 # LOGIN
 # ============================================================
+# ── CONSTANTES GLOBAIS ──
+FASES_DEF_G = [
+    (1, "ATRACAO",           5,  "Paquerador",      70, 60, 65),
+    (2, "CONEXAO EMOCIONAL", 7,  "Galanteador",     75, 70, 65),
+    (3, "SEDUCAO",           10, "Mestre da Labia", 80, 75, 70),
+]
+
+def estado_conexo_g(val):
+    if val >= 80: return "CONEXAO FORTE", "#DC2626"
+    if val >= 60: return "BOA QUIMICA", "#F59E0B"
+    if val >= 40: return "NEUTRO", "#64748B"
+    if val >= 20: return "INTERESSE CAINDO", "#EA580C"
+    if val >= 1:  return "ULTIMA CHANCE", "#7F1D1D"
+    return "ELIMINADA", "#000000"
+
+PERSONAGENS = {
+    "Rafaela": {
+        "emoji": "😊", "dificuldade": 2, "estrelas": "⭐⭐",
+        "desc": "Simpática, inteligente, bem-humorada. Conversa naturalmente mas não demonstra interesse imediatamente.",
+        "personalidade": "simpatica, inteligente, bem-humorada, curiosa, fala de forma leve e natural",
+        "humor": 80, "receptividade": 70, "provocacao": 30, "exigencia": 40, "bloqueada": False,
+    },
+    "Camila": {
+        "emoji": "😏", "dificuldade": 4, "estrelas": "⭐⭐⭐⭐",
+        "desc": "Segura, provocadora, responde com ironia e testa a confiança do usuário.",
+        "personalidade": "segura, ironica, provocadora, testa confianca, nao facilita",
+        "humor": 70, "receptividade": 45, "provocacao": 80, "exigencia": 70, "bloqueada": True,
+    },
+    "Helena": {
+        "emoji": "🧐", "dificuldade": 5, "estrelas": "⭐⭐⭐⭐⭐",
+        "desc": "Sofisticada, seletiva, difícil de impressionar. Exige conversa mais inteligente.",
+        "personalidade": "sofisticada, seletiva, intelectual, dificil de impressionar, exige profundidade",
+        "humor": 55, "receptividade": 30, "provocacao": 60, "exigencia": 90, "bloqueada": True,
+    },
+}
+
+MISSOES_POR_FASE = {
+    1: ["Fazer ela fazer uma pergunta espontânea sobre você","Conseguir que ela demonstre curiosidade","Criar um momento de humor","Fazer ela contar algo pessoal"],
+    2: ["Fazer ela lembrar algo que você disse antes","Conseguir que ela compartilhe um sonho","Criar um momento de empatia genuína","Fazer ela admitir algo que normalmente não diria"],
+    3: ["Criar um momento de flerte natural","Fazer ela brincar com você","Criar uma brincadeira interna entre vocês","Fazer ela perguntar algo pessoal espontaneamente"],
+}
+
+CENARIOS_TODOS = [
+    "cafeteria","parque","livraria","fila de evento","shopping","feira",
+    "exposicao de arte","aeroporto","praca","academia","show de musica",
+    "festa de aniversario","mercado","galeria","coworking","food court",
+    "banca de jornal","pet shop","sebo de livros","farmacia","bancada de bar",
+    "fila de banco","salao de beleza","loja de discos","jardim botanico",
+    "estacao de metro","calcadao","praia","aluguel de bicicletas","museu"
+]
+
+PERFIS_ESTILO = {
+    "O Confiante":     "Fala com segurança, mas às vezes avança rápido demais.",
+    "O Estrategista":  "Faz boas perguntas e lê bem os sinais.",
+    "O Divertido":     "Usa humor para criar conexão.",
+    "O Conquistador":  "Cria conexão emocional rapidamente.",
+    "O Reservado":     "Tem boas respostas, mas demonstra pouco interesse.",
+}
+
 if st.session_state.etapa == "Login":
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
@@ -287,7 +365,7 @@ if st.session_state.etapa == "Login":
             chave_r = st.text_input("🔑 Sua Chave API da Groq:", type="password", key="chave_rapida")
             for np in perfis:
                 dp = carregar_cache(np)
-                faixa_p = dp.get('faixa_atual', 1) if dp else 1
+                faixa_p = dp.get("faixa_atual", 1) if dp else 1
                 fi = FAIXAS[min(faixa_p-1, 6)]
                 st.markdown('<div class="perfil-btn">', unsafe_allow_html=True)
                 if st.button(f"🧠 {np}  ·  {fi[0]} {fi[2]}", key=f"perfil_{np}", use_container_width=True):
@@ -299,29 +377,15 @@ if st.session_state.etapa == "Login":
                         carregar_json(dp)
                         st.session_state.etapa = "App"
                         st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-        # PRIMEIRA EXPERIÊNCIA
         if not perfis:
             st.markdown("#### Vamos configurar seu Conexa")
-            st.markdown("*Como você quer melhorar sua comunicação?*")
-            objetivos = st.multiselect("Escolha seus objetivos:", [
-                "☐ Fazer novas amizades",
-                "☐ Conversar com mais confiança",
-                "☐ Melhorar minha comunicação",
-                "☐ Treinar conversas",
-                "☐ Aprender a interpretar contextos",
-            ])
-            st.session_state.objetivos_usuario = objetivos
 
         nome = st.text_input("Seu Nome:", key="input_nome_login")
         chave = st.text_input("Sua Chave API da Groq:", type="password", key="chave_nova")
-
-        if not perfis:
-            arq = st.file_uploader("Restaurar dados (.json):", type=["json"], key="upload_login")
-        else:
-            arq = None
+        arq = st.file_uploader("Restaurar dados (.json):", type=["json"], key="upload_login")
 
         dados_login = None
         if arq is not None:
@@ -343,10 +407,6 @@ if st.session_state.etapa == "Login":
                 st.warning("Preencha nome e chave API.")
         st.markdown("🔑 Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#C2185B;'>console.groq.com/keys</a>", unsafe_allow_html=True)
 
-
-# ============================================================
-# APP
-# ============================================================
 elif st.session_state.etapa == "App":
 
     # Só mostra navbar e barra quando NÃO está em partida ativa
@@ -357,56 +417,39 @@ elif st.session_state.etapa == "App":
 
         # NAVBAR linha 1
         cols1 = st.columns(7)
-        nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("🎭2","Labia")]
-        lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
-               "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
-               "Roleplay":"Simulador de Conversa","Labia":"🎭 A Arte da Lábia — EXCLUSIVO"}
-        for i,(ic,pg) in enumerate(nav1):
-            ch = list(lb1.keys())[i]
-            if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
-                st.session_state.pagina = ch; st.rerun()
+    # NAVBAR linha 1 — 💋 Mestre da Lábia como ícone especial
+    cols1 = st.columns(7)
+    nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("💋","Labia")]
+    lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
+           "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
+           "Roleplay":"Simulador de Conversa","Labia":"💋 Mestre da Lábia — Torne-se um Sedutor Imparável ⭐"}
+    for i,(ic,pg) in enumerate(nav1):
+        ch = list(lb1.keys())[i]
+        if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
+            st.session_state.pagina = ch; st.rerun()
 
-    # DESTAQUE — Arte da Lábia (botão real do Streamlit)
     st.markdown("""
     <style>
-    @keyframes pulsar {
-        0%   { opacity: 1; transform: scale(1); }
-        50%  { opacity: 0.85; transform: scale(1.02); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes brilhar {
-        0%   { box-shadow: 0 0 8px rgba(194,24,91,0.4); }
-        50%  { box-shadow: 0 0 22px rgba(194,24,91,0.9), 0 0 40px rgba(194,24,91,0.4); }
-        100% { box-shadow: 0 0 8px rgba(194,24,91,0.4); }
-    }
-    div[data-testid="stButton"] button.labia-cta {
-        animation: pulsar 2s ease-in-out infinite, brilhar 2s ease-in-out infinite;
-        background: linear-gradient(135deg, #FF69B4, #C2185B) !important;
-        border: none !important;
-        border-radius: 12px !important;
-        color: white !important;
-        font-weight: 700 !important;
-        font-size: 1em !important;
-        padding: 12px 20px !important;
-        width: 100% !important;
-    }
+    @keyframes pisca { 0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1} }
+    .labia-hint { text-align:right; font-size:0.7em; font-weight:700;
+        color:#C2185B; animation:pisca 2s ease-in-out infinite;
+        margin-top:-4px; margin-bottom:2px; }
+    .stApp .labia-hint { color:#C2185B !important; }
     </style>
+    <div class='labia-hint'>💋 ← Mestre da Lábia ⭐</div>
     """, unsafe_allow_html=True)
-    if st.button("🎭 TORNE-SE UM SEDUTOR IMPARÁVEL  ·  A Arte da Lábia  ·  ⭐ TOP  —  Clique aqui", key="btn_labia_cta", use_container_width=True):
-        st.session_state.pagina = "Labia"; st.rerun()
+    # NAVBAR linha 2
+    cols2 = st.columns(7)
+    nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
+    lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
+           "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
+           "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
+    for i,(ic,pg) in enumerate(nav2):
+        ch = list(lb2.keys())[i]
+        if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
+            st.session_state.pagina = ch; st.rerun()
 
-        # NAVBAR linha 2
-        cols2 = st.columns(7)
-        nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
-        lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
-               "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
-               "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
-        for i,(ic,pg) in enumerate(nav2):
-            ch = list(lb2.keys())[i]
-            if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
-                st.session_state.pagina = ch; st.rerun()
-
-        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
     # ──────────────────────────────────────────
     # HOME — DASHBOARD
@@ -831,114 +874,6 @@ elif st.session_state.etapa == "App":
         import re as _re
         import random as _rand
 
-        # ── CONSTANTES ──
-        PERSONAGENS = {
-            "Rafaela": {
-                "emoji": "👩",
-                "dificuldade": 2,
-                "estrelas": "⭐⭐",
-                "desc": "Simpática, inteligente, bem-humorada. Conversa naturalmente mas não demonstra interesse imediatamente.",
-                "personalidade": "simpática, inteligente, bem-humorada, curiosa, fala de forma leve e natural",
-                "humor": 80, "receptividade": 70, "provocacao": 30, "exigencia": 40,
-                "bloqueada": False,
-            },
-            "Camila": {
-                "emoji": "👩",
-                "dificuldade": 4,
-                "estrelas": "⭐⭐⭐⭐",
-                "desc": "Segura, provocadora, responde com ironia e testa a confiança do usuário.",
-                "personalidade": "segura, irônica, provocadora, testa confiança, não facilita",
-                "humor": 70, "receptividade": 45, "provocacao": 80, "exigencia": 70,
-                "bloqueada": True,
-            },
-            "Helena": {
-                "emoji": "👩",
-                "dificuldade": 5,
-                "estrelas": "⭐⭐⭐⭐⭐",
-                "desc": "Sofisticada, seletiva, difícil de impressionar. Exige conversa mais inteligente.",
-                "personalidade": "sofisticada, seletiva, intelectual, difícil de impressionar, exige profundidade",
-                "humor": 55, "receptividade": 30, "provocacao": 60, "exigencia": 90,
-                "bloqueada": True,
-            },
-        }
-
-        FASES_DEF = [
-            (1, "🟢", "ATRAÇÃO",           "Despertar interesse",        5,  "🥉 Paquerador",      70, 60, 65),
-            (2, "🟡", "CONEXÃO EMOCIONAL", "Criar vínculo",              7,  "🥈 Galanteador",     75, 70, 65),
-            (3, "🔴", "SEDUÇÃO",           "Criar química e tensão",     10, "👑 Mestre da Lábia", 80, 75, 70),
-        ]
-        # (fase, cor, nome, objetivo, minutos, titulo, min_conexao, min_naturalidade, min_interesse)
-
-        MISSOES_POR_FASE = {
-            1: [
-                "Fazer a personagem fazer uma pergunta espontânea sobre você",
-                "Conseguir que ela demonstre curiosidade",
-                "Criar um momento de humor",
-                "Fazer ela contar algo pessoal",
-            ],
-            2: [
-                "Fazer a personagem lembrar algo que você disse antes",
-                "Conseguir que ela compartilhe um sonho ou plano",
-                "Criar um momento de empatia genuína",
-                "Fazer ela admitir algo que normalmente não diria",
-            ],
-            3: [
-                "Criar um momento de flerte natural",
-                "Fazer ela usar um emoji de coração ou 😏",
-                "Criar uma brincadeira interna entre vocês",
-                "Fazer ela perguntar algo pessoal de forma espontânea",
-            ],
-        }
-
-        CENARIOS_TODOS = [
-            "cafeteria","parque","livraria","fila de evento","shopping","feira",
-            "exposição de arte","aeroporto","praça","academia","show de música",
-            "festa de aniversário","mercado","galeria","coworking","food court",
-            "banca de jornal","pet shop","sebo de livros","farmácia","bancada de bar",
-            "fila de banco","salão de beleza","loja de discos","jardim botânico",
-            "estação de metrô","calçadão","praia","aluguel de bicicletas","museu"
-        ]
-
-        PERFIS_ESTILO = {
-            "O Confiante":     "Fala com segurança, mas às vezes avança rápido demais.",
-            "O Estrategista":  "Faz boas perguntas e lê bem os sinais.",
-            "O Divertido":     "Usa humor para criar conexão.",
-            "O Conquistador":  "Cria conexão emocional rapidamente.",
-            "O Reservado":     "Tem boas respostas, mas demonstra pouco interesse.",
-        }
-
-        # ── DEFAULTS ──
-        defs_labia = {
-            'lj_fase': 1, 'lj_personagem_sel': 'Rafaela',
-            'lj_ativo': False, 'lj_chat': [], 'lj_conexo': 100,
-            'lj_atributos': {'interesse':50,'atracao':50,'conexao':50,'confianca':50,'naturalidade':50,'curiosidade':50,'tensao':20},
-            'lj_inicio': 0, 'lj_duracao': 300,
-            'lj_missao': '', 'lj_missao_cumprida': False,
-            'lj_aval': None, 'lj_tentativas': [],
-            'lj_historico_cenarios': [], 'lj_historico_aberturas': [],
-            'lj_ts_persona': 0, 'lj_ts_usuario': 0,
-            'lj_combo': 0, 'lj_arranques': [],
-            'lj_fases_concluidas': 0,
-            'lj_titulo': '🥉 Paquerador',
-            'lj_personagens_desbloqueadas': ['Rafaela'],
-            'lj_perfil_estilo': None,
-            'lj_historico_partidas': [],
-            'lj_desbloqueado': False,
-            'lj_ficha': {},
-            'lj_ficha_resumo': '',
-        }
-        for k, v in defs_labia.items():
-            if k not in st.session_state:
-                st.session_state[k] = v
-
-        def estado_conexo(val):
-            if val >= 80: return "🔥 ALTA CONEXÃO", "#DC2626"
-            if val >= 60: return "❤️ BOA QUÍMICA", "#F59E0B"
-            if val >= 40: return "😐 NEUTRO", "#64748B"
-            if val >= 20: return "⚠️ INTERESSE CAINDO", "#EA580C"
-            if val >= 1:  return "🚨 ÚLTIMA CHANCE", "#7F1D1D"
-            return "💥 ELIMINADA", "#000000"
-
         # ══════════════════════════════════════
         # TELA INICIAL — SEM PARTIDA ATIVA
         # ══════════════════════════════════════
@@ -964,7 +899,7 @@ elif st.session_state.etapa == "App":
             # JORNADA
             st.markdown("### 🗺️ Sua Jornada")
             cols_fases = st.columns(3)
-            for i, (fn, cor_f, nome_f, obj_f, mins_f, titulo_f, *_) in enumerate(FASES_DEF):
+            for i, (fn, cor_f, nome_f, obj_f, mins_f, titulo_f, *_) in enumerate(FASES_DEF_G):
                 concluida = st.session_state.lj_fases_concluidas >= fn
                 atual     = st.session_state.lj_fases_concluidas == fn - 1
                 bloqueada = not concluida and not atual
@@ -1040,7 +975,7 @@ elif st.session_state.etapa == "App":
                     index=fase_atual-1, key="lj_fase_sel_idx")
                 fase_atual = int(fase_sel_idx.split()[1])
 
-            fase_info = FASES_DEF[fase_atual - 1]
+            fase_info = FASES_DEF_G[fase_atual - 1]
             st.markdown(f"**Jogando:** Fase {fase_info[0]} — {fase_info[2]} · {fase_info[1]} · ⏱️ {fase_info[4]} min")
 
             if st.button("▶ COMEÇAR DESAFIO", use_container_width=True):
@@ -1195,7 +1130,7 @@ elif st.session_state.etapa == "App":
         chat      = st.session_state.lj_chat
         conexo    = st.session_state.lj_conexo
         fase_n    = st.session_state.lj_fase
-        fase_info = FASES_DEF[fase_n - 1] if 'FASES_DEF' in dir() else (fase_n,"","","",5,"",70,60,65)
+        fase_info = FASES_DEF_G[fase_n - 1] if 'FASES_DEF' in dir() else (fase_n,"","","",5,"",70,60,65)
         nome_p    = st.session_state.lj_nome_persona
         dados_p   = st.session_state.lj_dados_persona
         cenario   = st.session_state.lj_cenario
@@ -1209,7 +1144,7 @@ elif st.session_state.etapa == "App":
         pct_tempo = max(0.0, 1 - decorrido / duracao)
         cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#B45309" if pct_tempo > 0.2 else "#B91C1C")
         cor_con   = "#22C55E" if conexo>60 else ("#F59E0B" if conexo>30 else "#EF4444")
-        estado_label, _ = estado_conexo(conexo)
+        estado_label, _ = estado_conexo_g(conexo)
 
         # CENÁRIO
         st.markdown(
@@ -1485,7 +1420,7 @@ elif st.session_state.etapa == "App":
             chat      = st.session_state.lj_chat
             conexo    = st.session_state.lj_conexo
             fase_n    = st.session_state.lj_fase
-            fase_info = FASES_DEF[fase_n - 1]
+            fase_info = FASES_DEF_G[fase_n - 1]
             nome_p    = st.session_state.lj_nome_persona
             dados_p   = st.session_state.lj_dados_persona
             cenario   = st.session_state.lj_cenario
@@ -1498,7 +1433,7 @@ elif st.session_state.etapa == "App":
             segs_r    = int(restante % 60)
             pct_tempo = max(0.0, 1 - decorrido / duracao)
             cor_timer = "#22C55E" if pct_tempo > 0.5 else ("#B45309" if pct_tempo > 0.2 else "#B91C1C")
-            estado_label, estado_cor = estado_conexo(conexo)
+            estado_label, estado_cor = estado_conexo_g(conexo)
 
             # Esconde tudo do Streamlit — tela limpa só com o diálogo
             st.markdown("""
@@ -1911,7 +1846,7 @@ elif st.session_state.etapa == "App":
             st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
             if aprovado:
-                _, _, _, _, _, titulo_f, *_ = FASES_DEF[st.session_state.lj_fases_concluidas-1] if st.session_state.lj_fases_concluidas > 0 else FASES_DEF[0]
+                _, _, _, _, _, titulo_f, *_ = FASES_DEF_G[st.session_state.lj_fases_concluidas-1] if st.session_state.lj_fases_concluidas > 0 else FASES_DEF_G[0]
                 st.markdown(f"<div class='card-green' style='text-align:center;'><div style='font-size:1.5em;font-weight:700;color:#14532D;'>🎉 {aval['titulo']}</div><div style='color:#14532D;margin-top:4px;'>Você ganhou o título: <strong>{st.session_state.lj_titulo}</strong></div></div>", unsafe_allow_html=True)
             else:
                 st.markdown(f"<div class='card-red' style='text-align:center;'><div style='font-size:1.3em;font-weight:700;color:#7F1D1D;'>💥 {aval['titulo']}</div></div>", unsafe_allow_html=True)
