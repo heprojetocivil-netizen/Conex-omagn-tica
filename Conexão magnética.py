@@ -1431,7 +1431,8 @@ elif st.session_state.etapa == "App":
                             with st.spinner(""):
                                 try:
                                     msgs_p = [{"role":"system","content":system_p}] + historico + [{"role":"user","content":msg_labia}]
-                                    resp = client.chat.completions.create(messages=msgs_p, model="llama-3.3-70b-versatile", max_tokens=60)
+                                    msgs_p_safe = [{"role":m["role"],"content":m["content"].encode("utf-8","ignore").decode("utf-8")} for m in msgs_p]
+                                    resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=60)
                                     resp_txt = resp.choices[0].message.content.strip()
                                     # Remove frases explicativas longas que o modelo adiciona
                                     resp_txt = resp_txt.split('\n')[0].strip()
@@ -1446,32 +1447,32 @@ elif st.session_state.etapa == "App":
                             criterios_fase = {
                                 1: (
                                     "FASE 1 — ATRAÇÃO. Avalie:\n"
-                                    "🧲 CURIOSIDADE (+): despertou vontade de saber mais sobre ele?\n"
-                                    "😄 HUMOR (+): criou leveza ou momento divertido?\n"
-                                    "✨ ORIGINALIDADE (+): evitou perguntas previsíveis?\n"
-                                    "💪 CONFIANÇA (+): falou com segurança sem forçar?\n"
-                                    "🔄 RECIPROCIDADE (+): demonstrou interesse nela?\n"
-                                    "❌ PENALIZE: monossílabos, sequência de perguntas, tentar impressionar.\n"
+                                    "CURIOSIDADE (+): despertou vontade de saber mais sobre ele?\n"
+                                    "HUMOR (+): criou leveza ou momento divertido?\n"
+                                    "ORIGINALIDADE (+): evitou perguntas previsíveis?\n"
+                                    "CONFIANCA (+): falou com segurança sem forçar?\n"
+                                    "RECIPROCIDADE (+): demonstrou interesse nela?\n"
+                                    "PENALIZE: monossílabos, sequência de perguntas, tentar impressionar.\n"
                                     "Excelente: +15 a +25 | Bom: +5 a +14 | Neutro: -2 a +4 | Ruim: -5 a -12 | Péssimo: -13 a -25\n"
                                     "SEJA GENEROSO — iniciantes merecem crédito por tentativas sinceras."
                                 ),
                                 2: (
                                     "FASE 2 — CONEXÃO EMOCIONAL. Avalie:\n"
-                                    "👂 ESCUTA (+): reagiu ao que ela disse ou ignorou?\n"
-                                    "❤️ EMPATIA (+): demonstrou compreensão antes de falar de si?\n"
-                                    "🧠 PROFUNDIDADE (+): foi além do superficial?\n"
-                                    "🔄 RECIPROCIDADE (+): compartilhou algo pessoal depois dela se abrir?\n"
-                                    "❌ PENALIZE FORTE: ignorar abertura emocional, resolver o problema dela, falar de si quando ela se abriu.\n"
+                                    "ESCUTA (+): reagiu ao que ela disse ou ignorou?\n"
+                                    "EMPATIA (+): demonstrou compreensão antes de falar de si?\n"
+                                    "PROFUNDIDADE (+): foi além do superficial?\n"
+                                    "RECIPROCIDADE (+): compartilhou algo pessoal depois dela se abrir?\n"
+                                    "PENALIZE FORTE: ignorar abertura emocional, resolver o problema dela, falar de si quando ela se abriu.\n"
                                     "Excelente: +12 a +22 | Bom: +4 a +11 | Neutro: -3 a +3 | Ruim: -6 a -14 | Péssimo: -15 a -28\n"
                                     "SEJA MODERADO — mais exigente que fase 1."
                                 ),
                                 3: (
                                     "FASE 3 — SEDUÇÃO. Avalie:\n"
-                                    "⏱️ TIMING (+): respondeu no momento certo?\n"
-                                    "👀 LEITURA DE SINAIS (+): percebeu o estado emocional e reagiu?\n"
-                                    "🔥 TENSÃO (+): criou flerte leve sem ser vulgar?\n"
-                                    "😏 CONFIANÇA (+): respondeu provocações com segurança e humor?\n"
-                                    "❌ PENALIZE FORTE: insistência após recuo, vulgaridade, tentar impressionar, perder o fio.\n"
+                                    "TIMING (+): respondeu no momento certo?\n"
+                                    "LEITURA DE SINAIS (+): percebeu o estado emocional e reagiu?\n"
+                                    "TENSAO (+): criou flerte leve sem ser vulgar?\n"
+                                    "CONFIANCA (+): respondeu provocações com segurança e humor?\n"
+                                    "PENALIZE FORTE: insistência após recuo, vulgaridade, tentar impressionar, perder o fio.\n"
                                     f"Tempo: {tempo_resp}s — acima de 20s penaliza levemente.\n"
                                     "Excepcional: +15 a +25 | Bom: +5 a +14 | Neutro: -4 a +4 | Ruim: -7 a -16 | Péssimo: -17 a -30\n"
                                     "SEJA EXIGENTE — só respostas realmente boas sobem."
@@ -1503,7 +1504,7 @@ elif st.session_state.etapa == "App":
 
                             with st.spinner(""):
                                 try:
-                                    eval_txt = conexa_ia(prompt_eval)
+                                    eval_txt = conexa_ia(prompt_eval.encode("utf-8", errors="ignore").decode("utf-8"))
                                     jm2 = _re.search(r'\{.*\}', eval_txt, _re.DOTALL)
                                     eval_d = _json.loads(jm2.group(0)) if jm2 else {}
                                 except:
