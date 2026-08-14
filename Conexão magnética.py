@@ -67,6 +67,17 @@ st.markdown("""
     .chat-persona { background:#FFF5F7; border:1px solid #FFD1DC; border-radius:4px 12px 12px 12px; padding:12px 16px; margin:8px 0; }
     .stApp .chat-persona, .stApp .chat-persona p, .stApp .chat-persona span, .stApp .chat-persona div { color:#1A1A2E !important; }
 
+    /* Container do chat com scroll — mostra sempre as últimas mensagens */
+    .chat-scroll-container {
+        max-height: 40vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        scroll-behavior: smooth;
+        padding-bottom: 4px;
+    }
+    .chat-scroll-container > * { flex-shrink: 0; }
+
     .avaliacao-box { background:#FFFFFF; border:2px solid #FFB6C1; border-radius:16px; padding:20px; margin-bottom:12px; }
     .stApp .avaliacao-box, .stApp .avaliacao-box p, .stApp .avaliacao-box span, .stApp .avaliacao-box div, .stApp .avaliacao-box strong { color:#1A1A2E !important; }
 
@@ -1187,15 +1198,25 @@ elif st.session_state.etapa == "App":
                 unsafe_allow_html=True
             )
 
-            # 2. CHAT — só as mensagens
+            # 2. CHAT — container com scroll interno, sempre mostra o fim
+            chat_html = "<div class='chat-scroll-container' id='chat-container'>"
             for msg in chat:
                 if msg['role'] == 'user':
-                    st.markdown(f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
+                    chat_html += f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>"
                 else:
                     arr = msg.get('arranque','')
                     if arr:
-                        st.markdown(f"<div style='text-align:right;font-size:0.75em;color:#22C55E;font-weight:600;margin-bottom:1px;'>{arr}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>😊 {nome_p}:</b> {msg['content']}</div>", unsafe_allow_html=True)
+                        chat_html += f"<div style='text-align:right;font-size:0.75em;color:#22C55E;font-weight:600;margin-bottom:1px;'>{arr}</div>"
+                    chat_html += f"<div class='chat-persona'><b style='color:#1D4ED8;'>😊 {nome_p}:</b> {msg['content']}</div>"
+            chat_html += "<div id='chat-bottom'></div></div>"
+            chat_html += """
+            <script>
+                setTimeout(function(){
+                    var c = document.getElementById('chat-container');
+                    if(c) c.scrollTop = c.scrollHeight;
+                }, 100);
+            </script>"""
+            st.markdown(chat_html, unsafe_allow_html=True)
 
             # 3. DICA SUTIL — só na fase 1 no primeiro turno
             turno_u = sum(1 for m in chat if m['role']=='user')
@@ -1375,21 +1396,13 @@ elif st.session_state.etapa == "App":
                                 f"Personalidade: {dados_p['personalidade']}.\n"
                                 f"Aniversário: {aniv_p}. Hoje: {hoje_p}.\n"
                                 f"Cenário: {cenario}.\n\n"
-                                f"REGRA FUNDAMENTAL:\n"
-                                f"Você está numa conversa casual com alguém que acabou de conhecer.\n"
-                                f"REAJA ao que a pessoa disse agora — não fique presa no que você falou antes.\n"
-                                f"Se a pessoa mudou de assunto, mude com ela.\n"
-                                f"Se a pessoa disse algo curto ou sem sentido, reaja com naturalidade — sorria, ignore, pergunte 'oi?', brinque.\n"
-                                f"Pessoas reais não ficam explicando a própria vida toda hora.\n\n"
-                                f"REGRAS DE RESPOSTA:\n"
-                                f"- Máximo 1-2 frases CURTAS (5 a 30 palavras)\n"
-                                f"- NÃO continue um assunto que a pessoa não perguntou sobre\n"
-                                f"- NÃO termine sempre com pergunta\n"
-                                f"- NÃO explique seus pensamentos ou sentimentos em detalhe\n"
-                                f"- Reaja como uma pessoa real reagiria: simples, direta, humana\n"
-                                f"- Se a mensagem for confusa ou com erro de digitação, reaja naturalmente\n"
-                                f"- {'Seja aberta e receptiva' if fase_n==1 else 'Seja mais seletiva e exigente'}\n"
-                                f"- NUNCA revele que é IA"
+                                f"COMO RESPONDER:\n"
+                                f"- Maximo 10 palavras. Estilo mensagem de WhatsApp.\n"
+                                f"- Direta, humana, contextual ao que a pessoa disse\n"
+                                f"- Pode ter emoji se fizer sentido\n"
+                                f"- Nao explique. Nao filosofe. So reaja.\n"
+                                f"- {'Seja receptiva' if fase_n==1 else 'Seja mais seletiva'}\n"
+                                f"- NUNCA revele que e IA"
                                 + lembrete + aviso_pes
                             )
                             # Última fala do personagem e última do usuário — foco no turno atual
@@ -1432,7 +1445,7 @@ elif st.session_state.etapa == "App":
                                 try:
                                     msgs_p = [{"role":"system","content":system_p}] + historico + [{"role":"user","content":msg_labia}]
                                     msgs_p_safe = [{"role":m["role"],"content":m["content"].encode("utf-8","ignore").decode("utf-8")} for m in msgs_p]
-                                    resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=60)
+                                    resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=30)
                                     resp_txt = resp.choices[0].message.content.strip()
                                     # Remove frases explicativas longas que o modelo adiciona
                                     resp_txt = resp_txt.split('\n')[0].strip()
