@@ -338,61 +338,65 @@ if st.session_state.etapa == "Login":
 # ============================================================
 elif st.session_state.etapa == "App":
 
-    barra_salvar()
+    # Só mostra navbar e barra quando NÃO está em partida ativa
+    em_partida = (st.session_state.get('pagina') == 'Labia' and st.session_state.get('lj_ativo', False))
 
-    # NAVBAR linha 1
-    cols1 = st.columns(7)
-    nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("🎭2","Labia")]
-    lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
-           "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
-           "Roleplay":"Simulador de Conversa","Labia":"🎭 A Arte da Lábia — EXCLUSIVO"}
-    for i,(ic,pg) in enumerate(nav1):
-        ch = list(lb1.keys())[i]
-        if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
-            st.session_state.pagina = ch; st.rerun()
+    if not em_partida:
+        barra_salvar()
 
-    # DESTAQUE — Arte da Lábia
-    st.markdown("""
-    <style>
-    @keyframes pulsar {
-        0%   { opacity: 1; transform: scale(1); }
-        50%  { opacity: 0.7; transform: scale(1.03); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes brilhar {
-        0%   { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
-        50%  { box-shadow: 0 0 22px rgba(255,105,180,0.9), 0 0 40px rgba(255,105,180,0.4); }
-        100% { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
-    }
-    .labia-destaque {
-        animation: pulsar 2s ease-in-out infinite, brilhar 2s ease-in-out infinite;
-        background: linear-gradient(135deg, #FF69B4, #C2185B);
-        border-radius: 12px;
-        padding: 10px 16px;
-        text-align: center;
-        cursor: pointer;
-        margin-bottom: 4px;
-    }
-    .stApp .labia-destaque, .stApp .labia-destaque p,
-    .stApp .labia-destaque span, .stApp .labia-destaque div { color: white !important; }
-    </style>
-    <div class='labia-destaque' onclick="window.location.reload()">
-        🎭 <strong>TORNE-SE UM SEDUTOR IMPARÁVEL</strong> &nbsp;·&nbsp; A Arte da Lábia &nbsp;·&nbsp; ⭐ TOP &nbsp;&nbsp;👆 Clique em 🎭 acima
-    </div>
-    """, unsafe_allow_html=True)
+        # NAVBAR linha 1
+        cols1 = st.columns(7)
+        nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("🎭2","Labia")]
+        lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
+               "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
+               "Roleplay":"Simulador de Conversa","Labia":"🎭 A Arte da Lábia — EXCLUSIVO"}
+        for i,(ic,pg) in enumerate(nav1):
+            ch = list(lb1.keys())[i]
+            if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
+                st.session_state.pagina = ch; st.rerun()
 
-    # NAVBAR linha 2
-    cols2 = st.columns(7)
-    nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
-    lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
-           "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
-           "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
-    for i,(ic,pg) in enumerate(nav2):
-        ch = list(lb2.keys())[i]
-        if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
-            st.session_state.pagina = ch; st.rerun()
+        # DESTAQUE — Arte da Lábia
+        st.markdown("""
+        <style>
+        @keyframes pulsar {
+            0%   { opacity: 1; transform: scale(1); }
+            50%  { opacity: 0.7; transform: scale(1.03); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes brilhar {
+            0%   { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
+            50%  { box-shadow: 0 0 22px rgba(255,105,180,0.9), 0 0 40px rgba(255,105,180,0.4); }
+            100% { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
+        }
+        .labia-destaque {
+            animation: pulsar 2s ease-in-out infinite, brilhar 2s ease-in-out infinite;
+            background: linear-gradient(135deg, #FF69B4, #C2185B);
+            border-radius: 12px;
+            padding: 10px 16px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+        .stApp .labia-destaque, .stApp .labia-destaque p,
+        .stApp .labia-destaque span, .stApp .labia-destaque div { color: white !important; }
+        </style>
+        <div class='labia-destaque' onclick="window.location.reload()">
+            🎭 <strong>TORNE-SE UM SEDUTOR IMPARÁVEL</strong> &nbsp;·&nbsp; A Arte da Lábia &nbsp;·&nbsp; ⭐ TOP &nbsp;&nbsp;👆 Clique em 🎭 acima
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+        # NAVBAR linha 2
+        cols2 = st.columns(7)
+        nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
+        lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
+               "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
+               "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
+        for i,(ic,pg) in enumerate(nav2):
+            ch = list(lb2.keys())[i]
+            if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
+                st.session_state.pagina = ch; st.rerun()
+
+        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
     # ──────────────────────────────────────────
     # HOME — DASHBOARD
