@@ -355,35 +355,34 @@ elif st.session_state.etapa == "App":
             if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
                 st.session_state.pagina = ch; st.rerun()
 
-        # DESTAQUE — Arte da Lábia
-        st.markdown("""
-        <style>
-        @keyframes pulsar {
-            0%   { opacity: 1; transform: scale(1); }
-            50%  { opacity: 0.7; transform: scale(1.03); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes brilhar {
-            0%   { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
-            50%  { box-shadow: 0 0 22px rgba(255,105,180,0.9), 0 0 40px rgba(255,105,180,0.4); }
-            100% { box-shadow: 0 0 8px rgba(255,105,180,0.4); }
-        }
-        .labia-destaque {
-            animation: pulsar 2s ease-in-out infinite, brilhar 2s ease-in-out infinite;
-            background: linear-gradient(135deg, #FF69B4, #C2185B);
-            border-radius: 12px;
-            padding: 10px 16px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 4px;
-        }
-        .stApp .labia-destaque, .stApp .labia-destaque p,
-        .stApp .labia-destaque span, .stApp .labia-destaque div { color: white !important; }
-        </style>
-        <div class='labia-destaque' onclick="window.location.reload()">
-            🎭 <strong>TORNE-SE UM SEDUTOR IMPARÁVEL</strong> &nbsp;·&nbsp; A Arte da Lábia &nbsp;·&nbsp; ⭐ TOP &nbsp;&nbsp;👆 Clique em 🎭 acima
-        </div>
-        """, unsafe_allow_html=True)
+    # DESTAQUE — Arte da Lábia (botão real do Streamlit)
+    st.markdown("""
+    <style>
+    @keyframes pulsar {
+        0%   { opacity: 1; transform: scale(1); }
+        50%  { opacity: 0.85; transform: scale(1.02); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes brilhar {
+        0%   { box-shadow: 0 0 8px rgba(194,24,91,0.4); }
+        50%  { box-shadow: 0 0 22px rgba(194,24,91,0.9), 0 0 40px rgba(194,24,91,0.4); }
+        100% { box-shadow: 0 0 8px rgba(194,24,91,0.4); }
+    }
+    div[data-testid="stButton"] button.labia-cta {
+        animation: pulsar 2s ease-in-out infinite, brilhar 2s ease-in-out infinite;
+        background: linear-gradient(135deg, #FF69B4, #C2185B) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        color: white !important;
+        font-weight: 700 !important;
+        font-size: 1em !important;
+        padding: 12px 20px !important;
+        width: 100% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    if st.button("🎭 TORNE-SE UM SEDUTOR IMPARÁVEL  ·  A Arte da Lábia  ·  ⭐ TOP  —  Clique aqui", key="btn_labia_cta", use_container_width=True):
+        st.session_state.pagina = "Labia"; st.rerun()
 
         # NAVBAR linha 2
         cols2 = st.columns(7)
@@ -1372,51 +1371,136 @@ elif st.session_state.etapa == "App":
                             )
 
                             system_p = (
-                                f"Você é {nome_p}, {prof_p}, {cidade_p}.\n"
-                                f"{dados_p['personalidade']}.\n"
-                                f"Aniversário: {aniv_p}.\n"
-                                f"Hoje aconteceu com você: {hoje_p}.\n"
-                                f"Cenário: {cenario}. Fase: {fase_info[2]}.\n"
-                                f"Humor: {dados_p['humor']}/100. Receptividade: {dados_p['receptividade']}/100.\n"
-                                f"Provocação: {dados_p['provocacao']}/100. Exigência: {dados_p['exigencia']}/100.\n\n"
-                                f"REGRAS:\n"
-                                f"- Responda como essa pessoa real — MÁXIMO 1-2 frases\n"
+                                f"Você é {nome_p}, {prof_p}, morando em {cidade_p}.\n"
+                                f"Personalidade: {dados_p['personalidade']}.\n"
+                                f"Aniversário: {aniv_p}. Hoje: {hoje_p}.\n"
+                                f"Cenário: {cenario}.\n\n"
+                                f"REGRA FUNDAMENTAL:\n"
+                                f"Você está numa conversa casual com alguém que acabou de conhecer.\n"
+                                f"REAJA ao que a pessoa disse agora — não fique presa no que você falou antes.\n"
+                                f"Se a pessoa mudou de assunto, mude com ela.\n"
+                                f"Se a pessoa disse algo curto ou sem sentido, reaja com naturalidade — sorria, ignore, pergunte 'oi?', brinque.\n"
+                                f"Pessoas reais não ficam explicando a própria vida toda hora.\n\n"
+                                f"REGRAS DE RESPOSTA:\n"
+                                f"- Máximo 1-2 frases CURTAS (5 a 30 palavras)\n"
+                                f"- NÃO continue um assunto que a pessoa não perguntou sobre\n"
                                 f"- NÃO termine sempre com pergunta\n"
-                                f"- Pode comentar, brincar, discordar, provocar, usar expressões naturais\n"
-                                f"- Lembre de TUDO que foi dito — nunca contradiga\n"
-                                f"- Se te perguntarem algo pessoal, responda conforme seus dados\n"
-                                f"- {'Seja receptiva, dê abertura' if fase_n==1 else 'Exija mais qualidade'}\n"
-                                f"- Sequência de perguntas → reaja com menos entusiasmo\n"
+                                f"- NÃO explique seus pensamentos ou sentimentos em detalhe\n"
+                                f"- Reaja como uma pessoa real reagiria: simples, direta, humana\n"
+                                f"- Se a mensagem for confusa ou com erro de digitação, reaja naturalmente\n"
+                                f"- {'Seja aberta e receptiva' if fase_n==1 else 'Seja mais seletiva e exigente'}\n"
                                 f"- NUNCA revele que é IA"
                                 + lembrete + aviso_pes
                             )
-                            historico = [{"role":m["role"],"content":m["content"]} for m in chat]
+                            # Última fala do personagem e última do usuário — foco no turno atual
+                            ultima_fala_persona = next((m['content'] for m in reversed(chat) if m['role']=='assistant'), '')
+                            penultima_user = [m['content'] for m in chat if m['role']=='user']
+                            penultima_user = penultima_user[-1] if penultima_user else ''
 
+                            # Só as últimas 6 mensagens — evita o modelo ficar preso em assuntos antigos
+                            historico = [{"role":m["role"],"content":m["content"]} for m in chat[-6:]]
+
+                            # Injeta lembrete de foco no final do system
+                            foco_atual = (
+                                f"\n\nTURNO ATUAL:\n"
+                                f"Você acabou de dizer: \"{ultima_fala_persona}\"\n"
+                                f"A pessoa respondeu: \"{msg_labia}\"\n"
+                                f"Responda ESPECIFICAMENTE a isso. Ignore o histórico anterior se ele não for relevante.\n"
+                                f"Se a resposta da pessoa for curta, vaga ou mudar de assunto — acompanhe naturalmente.\n"
+                                f"Se tiver erro de digitação, reaja com humor ou ignore — nunca finja que entendeu algo que não foi dito."
+                            )
+
+                            system_p = (
+                                f"Você é {nome_p}, {prof_p}, morando em {cidade_p}.\n"
+                                f"Personalidade: {dados_p['personalidade']}.\n"
+                                f"Aniversário: {aniv_p}. Hoje: {hoje_p}.\n"
+                                f"Cenário: {cenario}.\n\n"
+                                f"COMO VOCÊ CONVERSA:\n"
+                                f"- Você reage ao que a pessoa acabou de dizer — não ao que você disse antes\n"
+                                f"- Máximo 1-2 frases curtas e naturais (10 a 35 palavras)\n"
+                                f"- Não explique seus pensamentos — reaja e pronto\n"
+                                f"- Não termine sempre com pergunta\n"
+                                f"- Se a pessoa mudar de assunto, mude também — sem resistência\n"
+                                f"- Reaja como uma pessoa inteligente e presente reagiria: percebe o que está sendo dito, responde ao tom\n"
+                                f"- Se receber 'está aí?', 'oi', 'ok', responda curto e humano — 'Estou sim 😄' ou 'Aqui 😊'\n"
+                                f"- Se receber erro de digitação óbvio, brinque levemente ou pergunte o que quis dizer\n"
+                                f"- {'Seja aberta e receptiva' if fase_n==1 else 'Seja mais seletiva'}\n"
+                                f"- NUNCA revele que é IA"
+                                + lembrete + aviso_pes + foco_atual
+                            )
                             with st.spinner(""):
                                 try:
-                                    client = Groq(api_key=st.session_state.api_key)
                                     msgs_p = [{"role":"system","content":system_p}] + historico + [{"role":"user","content":msg_labia}]
-                                    resp = client.chat.completions.create(messages=msgs_p, model="llama-3.3-70b-versatile", max_tokens=80)
+                                    resp = client.chat.completions.create(messages=msgs_p, model="llama-3.3-70b-versatile", max_tokens=60)
                                     resp_txt = resp.choices[0].message.content.strip()
+                                    # Remove frases explicativas longas que o modelo adiciona
+                                    resp_txt = resp_txt.split('\n')[0].strip()
                                 except:
-                                    resp_txt = "Interessante."
+                                    resp_txt = "É mesmo?"
 
                             # ── AVALIADOR INVISÍVEL ──
+                            # Critérios específicos por fase
+                            tempo_resp = int(_time.time() - st.session_state.lj_ts_persona)
+                            ultima_fala_av = chat[-1]['content'] if chat else ''
+
+                            criterios_fase = {
+                                1: (
+                                    "FASE 1 — ATRAÇÃO. Avalie:\n"
+                                    "🧲 CURIOSIDADE (+): despertou vontade de saber mais sobre ele?\n"
+                                    "😄 HUMOR (+): criou leveza ou momento divertido?\n"
+                                    "✨ ORIGINALIDADE (+): evitou perguntas previsíveis?\n"
+                                    "💪 CONFIANÇA (+): falou com segurança sem forçar?\n"
+                                    "🔄 RECIPROCIDADE (+): demonstrou interesse nela?\n"
+                                    "❌ PENALIZE: monossílabos, sequência de perguntas, tentar impressionar.\n"
+                                    "Excelente: +15 a +25 | Bom: +5 a +14 | Neutro: -2 a +4 | Ruim: -5 a -12 | Péssimo: -13 a -25\n"
+                                    "SEJA GENEROSO — iniciantes merecem crédito por tentativas sinceras."
+                                ),
+                                2: (
+                                    "FASE 2 — CONEXÃO EMOCIONAL. Avalie:\n"
+                                    "👂 ESCUTA (+): reagiu ao que ela disse ou ignorou?\n"
+                                    "❤️ EMPATIA (+): demonstrou compreensão antes de falar de si?\n"
+                                    "🧠 PROFUNDIDADE (+): foi além do superficial?\n"
+                                    "🔄 RECIPROCIDADE (+): compartilhou algo pessoal depois dela se abrir?\n"
+                                    "❌ PENALIZE FORTE: ignorar abertura emocional, resolver o problema dela, falar de si quando ela se abriu.\n"
+                                    "Excelente: +12 a +22 | Bom: +4 a +11 | Neutro: -3 a +3 | Ruim: -6 a -14 | Péssimo: -15 a -28\n"
+                                    "SEJA MODERADO — mais exigente que fase 1."
+                                ),
+                                3: (
+                                    "FASE 3 — SEDUÇÃO. Avalie:\n"
+                                    "⏱️ TIMING (+): respondeu no momento certo?\n"
+                                    "👀 LEITURA DE SINAIS (+): percebeu o estado emocional e reagiu?\n"
+                                    "🔥 TENSÃO (+): criou flerte leve sem ser vulgar?\n"
+                                    "😏 CONFIANÇA (+): respondeu provocações com segurança e humor?\n"
+                                    "❌ PENALIZE FORTE: insistência após recuo, vulgaridade, tentar impressionar, perder o fio.\n"
+                                    f"Tempo: {tempo_resp}s — acima de 20s penaliza levemente.\n"
+                                    "Excepcional: +15 a +25 | Bom: +5 a +14 | Neutro: -4 a +4 | Ruim: -7 a -16 | Péssimo: -17 a -30\n"
+                                    "SEJA EXIGENTE — só respostas realmente boas sobem."
+                                ),
+                            }
+
+                            arranques_fase = {
+                                1: ["🧲 CURIOSIDADE DESPERTADA","😄 MOMENTO DE HUMOR","✨ ORIGINALIDADE","💪 CONFIANÇA NATURAL","🎯 GANCHO PERFEITO","🚀 ARRANQUE!"],
+                                2: ["❤️ CONEXÃO CRIADA","👂 ESCUTA GENUÍNA","🧠 PROFUNDIDADE","🔄 RECIPROCIDADE","💎 MOMENTO ESPECIAL","🚀 ARRANQUE!"],
+                                3: ["🔥 TENSÃO CRIADA","😏 FLERTE NATURAL","⚡ TIMING PERFEITO","👀 LEITURA CORRETA","👑 MOVIMENTO MESTRE","🚀 ARRANQUE!"],
+                            }
+                            arr_disp = arranques_fase.get(fase_n, arranques_fase[1])
+
                             prompt_eval = (
-                                f"Você é o avaliador invisível do Mestre da Lábia.\n"
-                                f"Fase: {fase_info[2]}. Personagem: {nome_p} ({dados_p['personalidade']}).\n"
-                                f"Atributos atuais: {atribs}\n"
-                                f"Personagem disse: {chat[-1]['content'] if chat else ''}\n"
-                                f"Usuário respondeu: {msg_labia}\n"
-                                f"Tempo de resposta: {(_time.time()-st.session_state.lj_ts_persona):.0f}s\n\n"
-                                f"Avalie contexto, naturalidade, criatividade, confiança, reciprocidade, timing.\n"
-                                f"Não procure resposta certa — avalie qualidade social.\n\n"
-                                f"RETORNE JSON sem markdown:\n"
-                                f'{{"delta":-5,"interesse":50,"atracao":50,"conexao":50,"confianca":50,"naturalidade":50,"curiosidade":50,"tensao":20,"arranque":"","missao_cumprida":false}}\n\n'
-                                f"delta: -30 a +25. {'Fase 1: seja generoso (+3 a +15 para tentativas sinceras).' if fase_n==1 else 'Fases avançadas: seja exigente.'}\n"
-                                f"arranque: se delta>10, string curta ex '🧲 +12 CURIOSIDADE DESPERTADA', senão vazio.\n"
-                                f"missao_cumprida: true se a mensagem cumpriu '{st.session_state.lj_missao}'"
+                                f"Você é o avaliador invisível do Mestre da Lábia. Analise com precisão.\n\n"
+                                f"PERSONAGEM: {nome_p} — {dados_p['personalidade']}\n"
+                                f"CENÁRIO: {cenario}\n"
+                                f"ATRIBUTOS ATUAIS: {atribs}\n\n"
+                                f"ELA DISSE: \"{ultima_fala_av}\"\n"
+                                f"USUÁRIO RESPONDEU: \"{msg_labia}\"\n"
+                                f"TEMPO: {tempo_resp}s\n\n"
+                                f"{criterios_fase.get(fase_n, criterios_fase[1])}\n\n"
+                                f"MISSÃO SECRETA: '{st.session_state.lj_missao}'\n\n"
+                                f"RETORNE APENAS JSON sem markdown:\n"
+                                + '{"delta":0,"interesse":50,"atracao":50,"conexao":50,"confianca":50,"naturalidade":50,"curiosidade":50,"tensao":20,"arranque":"","missao_cumprida":false}' + "\n\n"
+                                f"arranque: se delta>=12 escolha um de {arr_disp} e formate 'EMOJI +DELTA NOME'. Senão vazio.\n"
+                                f"missao_cumprida: true SOMENTE se esta mensagem cumpriu a missão."
                             )
+
                             with st.spinner(""):
                                 try:
                                     eval_txt = conexa_ia(prompt_eval)
