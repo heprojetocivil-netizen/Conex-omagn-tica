@@ -1342,8 +1342,11 @@ elif st.session_state.etapa == "App":
                                 client = Groq(api_key=st.session_state.api_key)
                                 msgs_p = [{"role":"system","content":system_p}] + historico + [{"role":"user","content":msg_labia}]
                                 msgs_p_safe = [{"role":m["role"],"content":m["content"].encode("utf-8","ignore").decode("utf-8")} for m in msgs_p]
-                                resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=30)
-                                resp_txt = resp.choices[0].message.content.strip().split('\n')[0]
+                                resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=20)
+                                resp_bruto = resp.choices[0].message.content.strip().split('\n')[0]
+                                import re as _re_cut
+                                m_cut = _re_cut.search(r'[.!?]', resp_bruto)
+                                resp_txt = resp_bruto[:m_cut.end()].strip() if m_cut else ' '.join(resp_bruto.split()[:10])
                             except:
                                 resp_txt = "E mesmo?"
 
@@ -1705,7 +1708,7 @@ elif st.session_state.etapa == "App":
                                 try:
                                     msgs_p = [{"role":"system","content":system_p}] + historico + [{"role":"user","content":msg_labia}]
                                     msgs_p_safe = [{"role":m["role"],"content":m["content"].encode("utf-8","ignore").decode("utf-8")} for m in msgs_p]
-                                    resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=30)
+                                    resp = client.chat.completions.create(messages=msgs_p_safe, model="llama-3.3-70b-versatile", max_tokens=20)
                                     resp_txt = resp.choices[0].message.content.strip()
                                     # Remove frases explicativas longas que o modelo adiciona
                                     resp_txt = resp_txt.split('\n')[0].strip()
