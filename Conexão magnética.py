@@ -257,10 +257,12 @@ def barra_salvar():
 # ============================================================
 # ── CONSTANTES GLOBAIS ──
 FASES_DEF_G = [
+    # (num, nome,             mins, titulo,          min_conexao, min_natural, min_interesse)
     (1, "ATRACAO",           5,  "Paquerador",      70, 60, 65),
     (2, "CONEXAO EMOCIONAL", 7,  "Galanteador",     75, 70, 65),
     (3, "SEDUCAO",           10, "Mestre da Labia", 80, 75, 70),
 ]
+# Índices: [0]=num [1]=nome [2]=mins [3]=titulo [4]=min_conexao [5]=min_natural [6]=min_interesse
 
 def estado_conexo_g(val):
     if val >= 80: return "CONEXAO FORTE", "#DC2626"
@@ -866,7 +868,10 @@ elif st.session_state.etapa == "App":
             # JORNADA
             st.markdown("### 🗺️ Sua Jornada")
             cols_fases = st.columns(3)
-            for i, (fn, cor_f, nome_f, obj_f, mins_f, titulo_f, *_) in enumerate(FASES_DEF_G):
+            for i, (fn, nome_f, mins_f, titulo_f, *_) in enumerate(FASES_DEF_G):
+                emojis_fase = {1:"🟢",2:"🟡",3:"🔴"}
+                cor_f = emojis_fase.get(fn,"⚪")
+                obj_f = {"ATRACAO":"Despertar interesse","CONEXAO EMOCIONAL":"Criar vínculo","SEDUCAO":"Criar tensão"}.get(nome_f,"")
                 concluida = st.session_state.lj_fases_concluidas >= fn
                 atual     = st.session_state.lj_fases_concluidas == fn - 1
                 bloqueada = not concluida and not atual
@@ -943,7 +948,7 @@ elif st.session_state.etapa == "App":
                 fase_atual = int(fase_sel_idx.split()[1])
 
             fase_info = FASES_DEF_G[fase_atual - 1]
-            st.markdown(f"**Jogando:** Fase {fase_info[0]} — {fase_info[2]} · {fase_info[1]} · ⏱️ {fase_info[4]} min")
+            st.markdown(f"**Jogando:** Fase {fase_info[0]} — {fase_info[1]} · ⏱️ {fase_info[2]} min")
 
             if st.button("▶ COMEÇAR DESAFIO", use_container_width=True):
                 nome_sel = st.session_state.lj_personagem_sel
@@ -1046,7 +1051,7 @@ elif st.session_state.etapa == "App":
                 st.session_state.lj_conexo      = 100
                 st.session_state.lj_atributos   = {'interesse':50,'atracao':50,'conexao':50,'confianca':50,'naturalidade':50,'curiosidade':50,'tensao':20}
                 st.session_state.lj_inicio      = _time.time()
-                st.session_state.lj_duracao     = fase_info[4] * 60
+                st.session_state.lj_duracao     = fase_info[2] * 60
                 st.session_state.lj_missao      = missao
                 st.session_state.lj_missao_cumprida = False
                 st.session_state.lj_arranques   = []
@@ -1190,7 +1195,7 @@ elif st.session_state.etapa == "App":
             motivo = "tempo" if tempo_esgotado else "conexao"
             hist_txt = "\n".join(f"{'Você' if m['role']=='user' else nome_p}: {m['content']}" for m in chat)
             n_arr = len(st.session_state.get('lj_arranques',[]))
-            _, _, _, _, _, titulo_fase, min_c, min_n, min_i = fase_info
+            _, _, _, titulo_fase, min_c, min_n, min_i = fase_info
             passou = (conexo >= min_c and atribs.get('naturalidade',0) >= min_n and
                       atribs.get('interesse',0) >= min_i and turno_u >= 4 and motivo == "tempo")
 
@@ -1221,7 +1226,7 @@ elif st.session_state.etapa == "App":
                     st.session_state.lj_personagens_desbloqueadas.append("Camila")
                 if fase_n >= 2 and "Helena" not in st.session_state.lj_personagens_desbloqueadas:
                     st.session_state.lj_personagens_desbloqueadas.append("Helena")
-                _, _, _, _, _, titulo_fase, *_ = fase_info
+                _, _, _, titulo_fase, *_ = fase_info
                 st.session_state.lj_titulo = titulo_fase
             if perfil:
                 st.session_state.lj_perfil_estilo = perfil
@@ -1515,7 +1520,7 @@ elif st.session_state.etapa == "App":
                 turno_u = sum(1 for m in chat if m['role']=='user')
 
                 # Verifica critérios de passagem
-                _, _, _, _, _, titulo_fase, min_c, min_n, min_i = fase_info
+                _, _, _, titulo_fase, min_c, min_n, min_i = fase_info
                 passou = (
                     conexo >= min_c and
                     atribs.get('naturalidade',0) >= min_n and
@@ -1555,7 +1560,7 @@ elif st.session_state.etapa == "App":
                     if fase_n >= 2 and "Helena" not in st.session_state.lj_personagens_desbloqueadas:
                         st.session_state.lj_personagens_desbloqueadas.append("Helena")
                     # Título
-                    _, _, _, _, _, titulo_fase, *_ = fase_info
+                    _, _, _, titulo_fase, *_ = fase_info
                     st.session_state.lj_titulo = titulo_fase
                 if perfil:
                     st.session_state.lj_perfil_estilo = perfil
@@ -1831,7 +1836,7 @@ elif st.session_state.etapa == "App":
             st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
             if aprovado:
-                _, _, _, _, _, titulo_f, *_ = FASES_DEF_G[st.session_state.lj_fases_concluidas-1] if st.session_state.lj_fases_concluidas > 0 else FASES_DEF_G[0]
+                _, _, _, titulo_f, *_ = FASES_DEF_G[st.session_state.lj_fases_concluidas-1] if st.session_state.lj_fases_concluidas > 0 else FASES_DEF_G[0]
                 st.markdown(f"<div class='card-green' style='text-align:center;'><div style='font-size:1.5em;font-weight:700;color:#14532D;'>🎉 {aval['titulo']}</div><div style='color:#14532D;margin-top:4px;'>Você ganhou o título: <strong>{st.session_state.lj_titulo}</strong></div></div>", unsafe_allow_html=True)
             else:
                 st.markdown(f"<div class='card-red' style='text-align:center;'><div style='font-size:1.3em;font-weight:700;color:#7F1D1D;'>💥 {aval['titulo']}</div></div>", unsafe_allow_html=True)
