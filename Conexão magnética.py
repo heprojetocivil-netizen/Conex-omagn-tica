@@ -225,7 +225,7 @@ def conexa_ia(prompt, system_extra=""):
         )
         resp = client.chat.completions.create(
             messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="llama-3.3-70b-specdec",
+            model="gemma2-9b-it",
         )
         return resp.choices[0].message.content
     except Exception as e:
@@ -590,7 +590,7 @@ elif st.session_state.etapa == "App":
                             try:
                                 client_l = Groq(api_key=st.session_state.api_key)
                                 msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
-                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="llama-3.3-70b-specdec",max_tokens=25)
+                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="gemma2-9b-it",max_tokens=25)
                                 resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
                                 import re as _re2
                                 mc2 = _re2.search(r'[.!?]',resp_bruto)
@@ -1031,7 +1031,7 @@ elif st.session_state.etapa == "App":
                         try:
                             client = Groq(api_key=st.session_state.api_key)
                             msgs = [{"role":"system","content":st.session_state.roleplay_system}] + historico_msgs + [{"role":"user","content":msg_role}]
-                            resp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-specdec")
+                            resp = client.chat.completions.create(messages=msgs, model="gemma2-9b-it")
                             resp_txt = resp.choices[0].message.content
                         except Exception as e:
                             resp_txt = f"⚠️ Erro: {e}"
