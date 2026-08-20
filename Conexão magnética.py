@@ -225,7 +225,7 @@ def conexa_ia(prompt, system_extra=""):
         )
         resp = client.chat.completions.create(
             messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="moonshotai/kimi-k2-instruct",
+            model="qwen2.5-72b-instruct",
         )
         return resp.choices[0].message.content
     except Exception as e:
@@ -380,50 +380,46 @@ if st.session_state.etapa == "Login":
 elif st.session_state.etapa == "App":
 
     # Só mostra navbar e barra quando NÃO está em partida ativa
-    em_partida = (st.session_state.get('pagina') == 'Labia' and st.session_state.get('lj_ativo', False))
+    em_partida = st.session_state.get('pagina') == 'Dialogo'
 
     if not em_partida:
         barra_salvar()
-
-        # NAVBAR linha 1
+        # NAVBAR linha 1 — 💋 Mestre da Lábia como ícone especial
         cols1 = st.columns(7)
-    # NAVBAR linha 1 — 💋 Mestre da Lábia como ícone especial
-    cols1 = st.columns(7)
-    nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("💋","Labia")]
-    lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
+        nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("💋","Labia")]
+        lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
            "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
            "Roleplay":"Simulador de Conversa","Labia":"💋 Mestre da Lábia — Torne-se um Sedutor Imparável ⭐"}
-    for i,(ic,pg) in enumerate(nav1):
-        ch = list(lb1.keys())[i]
-        if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
-            st.session_state.pagina = ch; st.rerun()
-
-    st.markdown("""
-    <style>
-    @keyframes pisca { 0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1} }
-    .labia-hint { text-align:right; font-size:0.7em; font-weight:700;
+        for i,(ic,pg) in enumerate(nav1):
+            ch = list(lb1.keys())[i]
+            if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
+                st.session_state.pagina = ch; st.rerun()
+        st.markdown("""
+        <style>
+        @keyframes pisca { 0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1} }
+        .labia-hint { text-align:right; font-size:0.7em; font-weight:700;
         color:#C2185B; animation:pisca 2s ease-in-out infinite;
         margin-top:-4px; margin-bottom:2px; }
-    .stApp .labia-hint { color:#C2185B !important; }
-    </style>
-    <div class='labia-hint'>💋 ← Mestre da Lábia ⭐</div>
-    """, unsafe_allow_html=True)
-    # NAVBAR linha 2
-    cols2 = st.columns(7)
-    nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
-    lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
+        .stApp .labia-hint { color:#C2185B !important; }
+        </style>
+        <div class='labia-hint'>💋 ← Mestre da Lábia ⭐</div>
+        """, unsafe_allow_html=True)
+        # NAVBAR linha 2
+        cols2 = st.columns(7)
+        nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
+        lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
            "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
            "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
-    for i,(ic,pg) in enumerate(nav2):
-        ch = list(lb2.keys())[i]
-        if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
-            st.session_state.pagina = ch; st.rerun()
+        for i,(ic,pg) in enumerate(nav2):
+            ch = list(lb2.keys())[i]
+            if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
+                st.session_state.pagina = ch; st.rerun()
 
-    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-    # ──────────────────────────────────────────
-    # HOME — DASHBOARD
-    # ──────────────────────────────────────────
+        # ──────────────────────────────────────────
+        # HOME — DASHBOARD
+        # ──────────────────────────────────────────
     if st.session_state.pagina == "Home":
         col_u, col_r = st.columns([3,1])
         with col_u:
@@ -791,7 +787,7 @@ elif st.session_state.etapa == "App":
                             try:
                                 client = Groq(api_key=st.session_state.api_key)
                                 msgs = [{"role":"system","content":st.session_state.roleplay_system}] + historico_msgs + [{"role":"user","content":msg_role}]
-                                resp = client.chat.completions.create(messages=msgs, model="moonshotai/kimi-k2-instruct")
+                                resp = client.chat.completions.create(messages=msgs, model="qwen2.5-72b-instruct")
                                 resp_txt = resp.choices[0].message.content
                             except Exception as e:
                                 resp_txt = f"⚠️ Erro: {e}"
@@ -1210,7 +1206,7 @@ elif st.session_state.etapa == "App":
                             try:
                                 client_l = Groq(api_key=st.session_state.api_key)
                                 msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
-                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="moonshotai/kimi-k2-instruct",max_tokens=25)
+                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="qwen2.5-72b-instruct",max_tokens=25)
                                 resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
                                 import re as _re2
                                 mc2 = _re2.search(r'[.!?]',resp_bruto)
