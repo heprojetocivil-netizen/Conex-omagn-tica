@@ -9,14 +9,16 @@ st.set_page_config(page_title="CONEXA IA", page_icon="🧠", layout="wide")
 # ============================================================
 # MODELO GROQ — configurado em UM único lugar para facilitar manutenção
 # ============================================================
-GROQ_MODEL = "llama-3.3-70b-versatile"
-# Nota: "llama-3.1-70b-versatile" foi descontinuado pela Groq.
-# Se este modelo também for descontinuado no futuro, veja a lista
-# atualizada em: https://console.groq.com/docs/models
-# Alternativas atuais rápidas e de boa qualidade:
-#   "llama-3.1-8b-instant"  (mais rápido, menor)
-#   "openai/gpt-oss-20b"    (alternativa)
-#   "moonshotai/kimi-k2-instruct"
+GROQ_MODEL = "openai/gpt-oss-120b"
+# Nota: tanto "llama-3.1-70b-versatile" quanto "llama-3.3-70b-versatile"
+# foram descontinuados pela Groq (desativado em 16/08/2026). A própria
+# Groq recomenda migrar para "openai/gpt-oss-120b" (equivalente ao
+# antigo Llama 3.3 70B) ou "qwen/qwen3.6-27b".
+# Lista sempre atualizada: https://console.groq.com/docs/models
+# Alternativas atuais:
+#   "openai/gpt-oss-20b"        (mais rápido/barato, menor)
+#   "qwen/qwen3.6-27b"          (alternativa multimodal)
+#   "moonshotai/kimi-k2-instruct-0905"
 
 st.markdown("""
     <style>
