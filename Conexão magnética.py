@@ -622,6 +622,8 @@ elif st.session_state.etapa == "App":
                                 import re as _re2
                                 mc2 = _re2.search(r'[.!?]',resp_bruto)
                                 resp_txt = resp_bruto[:mc2.end()].strip() if mc2 else ' '.join(resp_bruto.split()[:10])
+                                if not resp_txt.strip():
+                                    resp_txt = "Hmm, conta mais!"
                             except Exception as e:
                                 resp_txt = "É mesmo?"
 
@@ -653,7 +655,11 @@ elif st.session_state.etapa == "App":
                             except: ev_d = {}
 
                         delta = ev_d.get('delta',0)
-                        arranque = f"🚀 {ev_d['arranque']}" if ev_d.get('arranque') else ""
+                        arranque_raw = str(ev_d.get('arranque','') or '').strip()
+                        # Só aceita arranque no formato real "+15 CURIOSIDADE" (precisa ter número).
+                        # Isso evita mostrar texto de template como "+DELTA Usuario" quando a IA
+                        # não substitui o placeholder corretamente.
+                        arranque = f"🚀 {arranque_raw}" if _r.match(r'^[+\-]?\d+\s+\S+', arranque_raw) else ""
                         for k in ['interesse','atracao','conexao','confianca','naturalidade','curiosidade','tensao']:
                             if k in ev_d: atribs[k]=max(0,min(100,ev_d[k]))
                             st.session_state.lj_atributos = atribs
@@ -683,7 +689,11 @@ elif st.session_state.etapa == "App":
                     st.session_state.lj_ativo=False; st.session_state.lj_chat=[]
                     st.session_state.pagina="Labia"; st.rerun()
 
-            _t.sleep(0.8); st.rerun()
+            # Atualiza o cronômetro periodicamente. Um intervalo curto demais (ex: 0.8s)
+            # faz o app inteiro re-renderizar rápido demais, o que pode causar telas
+            # sobrepostas/duplicadas no navegador. 2s é suficiente para o timer parecer fluido.
+            _t.sleep(2)
+            st.rerun()
 
         st.stop()
 
