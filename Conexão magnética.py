@@ -225,7 +225,7 @@ def conexa_ia(prompt, system_extra=""):
         )
         resp = client.chat.completions.create(
             messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="qwen2.5-72b-instruct",
+            model="llama-3.1-70b-versatile",
         )
         return resp.choices[0].message.content
     except Exception as e:
@@ -417,107 +417,108 @@ elif st.session_state.etapa == "App":
 
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-        # ──────────────────────────────────────────
-        # HOME — DASHBOARD
-        # ──────────────────────────────────────────
-    if st.session_state.pagina == "Home":
-        col_u, col_r = st.columns([3,1])
-        with col_u:
-            st.title(f"🧠 Olá, {st.session_state.usuario}!")
-            faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
-            st.markdown(f"<span class='badge-roxo'>{faixa[0]} {faixa[2]}</span>", unsafe_allow_html=True)
-        with col_r:
-            if st.button("🚪 Sair"):
-                for k in list(st.session_state.keys()): del st.session_state[k]
-                st.rerun()
+    # Roteamento de páginas
+    # Quando em diálogo, para aqui — o elif Dialogo já foi processado acima
+    if em_partida:
+        st.stop()
+    # Se estiver em diálogo, para aqui e vai direto para o Dialogo
+    col_u, col_r = st.columns([3,1])
+    with col_u:
+        st.title(f"🧠 Olá, {st.session_state.usuario}!")
+        faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
+        st.markdown(f"<span class='badge-roxo'>{faixa[0]} {faixa[2]}</span>", unsafe_allow_html=True)
+    with col_r:
+        if st.button("🚪 Sair"):
+            for k in list(st.session_state.keys()): del st.session_state[k]
+            st.rerun()
 
-        if not st.session_state.historico and not st.session_state.conversas_analisadas:
-            arq_h = st.file_uploader("Restaurar dados (.json):", type=["json"], key="upload_home")
-            if arq_h:
-                try:
-                    d = json.load(arq_h); carregar_json(d); salvar_cache(st.session_state.usuario)
-                    st.success("✅ Dados restaurados!"); st.rerun()
-                except: st.error("Arquivo inválido.")
+    if not st.session_state.historico and not st.session_state.conversas_analisadas:
+        arq_h = st.file_uploader("Restaurar dados (.json):", type=["json"], key="upload_home")
+        if arq_h:
+            try:
+                d = json.load(arq_h); carregar_json(d); salvar_cache(st.session_state.usuario)
+                st.success("✅ Dados restaurados!"); st.rerun()
+            except: st.error("Arquivo inválido.")
 
-        # PAINEL PRINCIPAL
+    # PAINEL PRINCIPAL
+    st.markdown(f"""
+    <div class='painel-conexa'>
+        <div style='font-size:0.82em;opacity:0.7;letter-spacing:2px;margin-bottom:12px;'>🧠 CONEXA IA — PAINEL DE INTELIGÊNCIA</div>
+        <div style='font-size:1.1em;opacity:0.6;margin-bottom:16px;'>A IA que ajuda você a entender a conversa — e saber o próximo passo.</div>
+        <div style='display:grid;grid-template-columns:repeat(3,1fr);gap:14px;'>
+            <div style='text-align:center;background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;'>
+                <div style='font-size:0.7em;opacity:0.6;'>⚡ NÍVEL ATUAL</div>
+                <div style='font-size:1.3em;font-weight:700;'>{faixa[2]}</div>
+            </div>
+            <div style='text-align:center;background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;'>
+                <div style='font-size:0.7em;opacity:0.6;'>💬 CONVERSAS</div>
+                <div style='font-size:1.6em;font-weight:700;'>{st.session_state.conversas_analisadas}</div>
+            </div>
+            <div style='text-align:center;background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;'>
+                <div style='font-size:0.7em;opacity:0.6;'>🃏 CARTAS USADAS</div>
+                <div style='font-size:1.6em;font-weight:700;'>{st.session_state.cartas_usadas}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # DASHBOARD MÉTRICAS
+    st.markdown("### 📊 Seu Desempenho")
+    c1,c2,c3,c4,c5,c6 = st.columns(6)
+    c1.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.conversas_analisadas}</div><div>Conversas</div></div>", unsafe_allow_html=True)
+    c2.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.mensagens_aprimoradas}</div><div>Turbinadas</div></div>", unsafe_allow_html=True)
+    c3.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.analises_realizadas}</div><div>Análises</div></div>", unsafe_allow_html=True)
+    c4.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.cartas_usadas}</div><div>Cartas</div></div>", unsafe_allow_html=True)
+    c5.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.treinos_realizados}</div><div>Treinos</div></div>", unsafe_allow_html=True)
+    c6.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.favoritos_total}</div><div>Favoritos</div></div>", unsafe_allow_html=True)
+
+    # EVOLUÇÃO
+    st.markdown("### 📈 Evolução")
+    metricas = [
+        ("Clareza", st.session_state.clareza),
+        ("Naturalidade", st.session_state.naturalidade),
+        ("Reciprocidade", st.session_state.reciprocidade),
+        ("Confiança", st.session_state.confianca),
+        ("Escuta", st.session_state.escuta),
+    ]
+    for nome_m, val in metricas:
+        cor = "#22C55E" if val >= 7 else ("#B45309" if val >= 4 else "#B91C1C")
         st.markdown(f"""
-        <div class='painel-conexa'>
-            <div style='font-size:0.82em;opacity:0.7;letter-spacing:2px;margin-bottom:12px;'>🧠 CONEXA IA — PAINEL DE INTELIGÊNCIA</div>
-            <div style='font-size:1.1em;opacity:0.6;margin-bottom:16px;'>A IA que ajuda você a entender a conversa — e saber o próximo passo.</div>
-            <div style='display:grid;grid-template-columns:repeat(3,1fr);gap:14px;'>
-                <div style='text-align:center;background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;'>
-                    <div style='font-size:0.7em;opacity:0.6;'>⚡ NÍVEL ATUAL</div>
-                    <div style='font-size:1.3em;font-weight:700;'>{faixa[2]}</div>
-                </div>
-                <div style='text-align:center;background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;'>
-                    <div style='font-size:0.7em;opacity:0.6;'>💬 CONVERSAS</div>
-                    <div style='font-size:1.6em;font-weight:700;'>{st.session_state.conversas_analisadas}</div>
-                </div>
-                <div style='text-align:center;background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;'>
-                    <div style='font-size:0.7em;opacity:0.6;'>🃏 CARTAS USADAS</div>
-                    <div style='font-size:1.6em;font-weight:700;'>{st.session_state.cartas_usadas}</div>
-                </div>
+        <div style='margin-bottom:10px;'>
+            <div style='display:flex;justify-content:space-between;font-size:0.88em;font-weight:600;color:#1A1A2E;'>
+                <span>{nome_m}</span><span style='color:{cor};'>{val}/10</span>
+            </div>
+            <div style='background:#F1F5F9;border-radius:999px;height:8px;overflow:hidden;margin-top:4px;'>
+                <div style='height:100%;border-radius:999px;background:{cor};width:{val*10}%;'></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # DASHBOARD MÉTRICAS
-        st.markdown("### 📊 Seu Desempenho")
-        c1,c2,c3,c4,c5,c6 = st.columns(6)
-        c1.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.conversas_analisadas}</div><div>Conversas</div></div>", unsafe_allow_html=True)
-        c2.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.mensagens_aprimoradas}</div><div>Turbinadas</div></div>", unsafe_allow_html=True)
-        c3.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.analises_realizadas}</div><div>Análises</div></div>", unsafe_allow_html=True)
-        c4.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.cartas_usadas}</div><div>Cartas</div></div>", unsafe_allow_html=True)
-        c5.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.treinos_realizados}</div><div>Treinos</div></div>", unsafe_allow_html=True)
-        c6.markdown(f"<div class='stat-box'><div class='stat-numero'>{st.session_state.favoritos_total}</div><div>Favoritos</div></div>", unsafe_allow_html=True)
+    # GUIA DE ABAS
+    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
+    st.markdown("### 🗺️ O que cada aba faz")
+    guia = {
+        "⚡ Resposta Rápida": "Cole uma mensagem e receba 3 opções de resposta com estratégia",
+        "🃏 Carta na Manga": "Quando você não sabe o que dizer — a IA encontra uma nova possibilidade",
+        "💬 Turbinar": "Melhore qualquer mensagem — clareza, tom e naturalidade",
+        "🧠 Raio-X": "Análise completa de uma conversa — fluidez, reciprocidade e oportunidades",
+        "🎭 Roleplay": "Simule conversas e receba avaliação detalhada",
+        "🎭 Arte da Lábia": "Treinamento adaptativo em 7 faixas — do iniciante ao Don Juan",
+        "📚 Biblioteca": "Suas melhores respostas organizadas por categoria",
+        "📸 Leitor de Perfil": "Analisa informações públicas e sugere assuntos de conversa",
+        "⚔️ Comparar": "Compare duas conversas e descubra qual tem melhor dinâmica",
+        "🗓️ Plano 7 Dias": "Plano de desenvolvimento de comunicação personalizado",
+        "📈 Progresso": "Sua evolução ao longo do tempo em todas as métricas",
+        "📋 Relatório": "Resumo semanal gerado automaticamente pela IA",
+    }
+    for aba, desc in guia.items():
+        st.markdown(f"**{aba}** — <span style='color:#4B5563;'>{desc}</span>", unsafe_allow_html=True)
 
-        # EVOLUÇÃO
-        st.markdown("### 📈 Evolução")
-        metricas = [
-            ("Clareza", st.session_state.clareza),
-            ("Naturalidade", st.session_state.naturalidade),
-            ("Reciprocidade", st.session_state.reciprocidade),
-            ("Confiança", st.session_state.confianca),
-            ("Escuta", st.session_state.escuta),
-        ]
-        for nome_m, val in metricas:
-            cor = "#22C55E" if val >= 7 else ("#B45309" if val >= 4 else "#B91C1C")
-            st.markdown(f"""
-            <div style='margin-bottom:10px;'>
-                <div style='display:flex;justify-content:space-between;font-size:0.88em;font-weight:600;color:#1A1A2E;'>
-                    <span>{nome_m}</span><span style='color:{cor};'>{val}/10</span>
-                </div>
-                <div style='background:#F1F5F9;border-radius:999px;height:8px;overflow:hidden;margin-top:4px;'>
-                    <div style='height:100%;border-radius:999px;background:{cor};width:{val*10}%;'></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # GUIA DE ABAS
+    if st.session_state.historico:
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-        st.markdown("### 🗺️ O que cada aba faz")
-        guia = {
-            "⚡ Resposta Rápida": "Cole uma mensagem e receba 3 opções de resposta com estratégia",
-            "🃏 Carta na Manga": "Quando você não sabe o que dizer — a IA encontra uma nova possibilidade",
-            "💬 Turbinar": "Melhore qualquer mensagem — clareza, tom e naturalidade",
-            "🧠 Raio-X": "Análise completa de uma conversa — fluidez, reciprocidade e oportunidades",
-            "🎭 Roleplay": "Simule conversas e receba avaliação detalhada",
-            "🎭 Arte da Lábia": "Treinamento adaptativo em 7 faixas — do iniciante ao Don Juan",
-            "📚 Biblioteca": "Suas melhores respostas organizadas por categoria",
-            "📸 Leitor de Perfil": "Analisa informações públicas e sugere assuntos de conversa",
-            "⚔️ Comparar": "Compare duas conversas e descubra qual tem melhor dinâmica",
-            "🗓️ Plano 7 Dias": "Plano de desenvolvimento de comunicação personalizado",
-            "📈 Progresso": "Sua evolução ao longo do tempo em todas as métricas",
-            "📋 Relatório": "Resumo semanal gerado automaticamente pela IA",
-        }
-        for aba, desc in guia.items():
-            st.markdown(f"**{aba}** — <span style='color:#4B5563;'>{desc}</span>", unsafe_allow_html=True)
-
-        if st.session_state.historico:
-            st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-            st.markdown("### 🕐 Últimas Atividades")
-            for item in reversed(st.session_state.historico[-4:]):
-                st.markdown(f"<div class='hist-item'><span class='badge'>{item['tipo']}</span> <small style='color:#888'>{item['data']}</small><br><small>{item['tema'][:80]}</small></div>", unsafe_allow_html=True)
+        st.markdown("### 🕐 Últimas Atividades")
+        for item in reversed(st.session_state.historico[-4:]):
+            st.markdown(f"<div class='hist-item'><span class='badge'>{item['tipo']}</span> <small style='color:#888'>{item['data']}</small><br><small>{item['tema'][:80]}</small></div>", unsafe_allow_html=True)
 
     # ──────────────────────────────────────────
     # RESPOSTA RÁPIDA
@@ -533,48 +534,48 @@ elif st.session_state.etapa == "App":
         with col2:
             objetivo = st.selectbox("O que você quer fazer?", ["Continuar a conversa","Responder de forma natural","Esclarecer algo","Iniciar um assunto novo","Dar um passo à frente"])
 
-        contexto_extra = st.text_input("Contexto adicional (opcional):", placeholder="ex: acabamos de nos conhecer, faz 2 dias que não falamos...")
+    contexto_extra = st.text_input("Contexto adicional (opcional):", placeholder="ex: acabamos de nos conhecer, faz 2 dias que não falamos...")
 
-        if st.button("⚡ ANALISAR E RESPONDER"):
-            if msg_recebida.strip():
-                with st.spinner("Analisando o contexto..."):
-                    prompt = (
-                        f"Analise esta mensagem e gere 3 opções estratégicas de resposta.\n"
-                        f"Mensagem recebida: '{msg_recebida}'\n"
-                        f"Quem enviou: {quem}. Objetivo: {objetivo}. Contexto: {contexto_extra or 'não informado'}.\n\n"
-                        f"REGRAS:\n"
-                        f"- NÃO afirme intenções ou sentimentos que não podem ser conhecidos\n"
-                        f"- Trabalhe apenas com padrões observáveis na mensagem\n"
-                        f"- Respostas devem soar naturais, não robóticas\n\n"
-                        f"FORMATO:\n\n"
-                        f"📊 LEITURA DO CONTEXTO:\n[O que é observável nessa mensagem — tom, abertura, oportunidades]\n\n"
-                        f"💬 OPÇÃO 1 — NATURAL\n[resposta]\nPor quê: [explicação curta]\n\n"
-                        f"💡 OPÇÃO 2 — INTERESSANTE\n[resposta]\nPor quê: [explicação curta]\n\n"
-                        f"🎯 OPÇÃO 3 — DIRETA\n[resposta]\nPor quê: [explicação curta]\n\n"
-                        f"⭐ RECOMENDAÇÃO:\n[qual das 3 é mais adequada para esse contexto e por quê]"
-                    )
-                    res = conexa_ia(prompt)
-                    st.session_state.analises_realizadas += 1
-                    st.session_state.conversas_analisadas += 1
-                    verificar_conquistas()
-                    salvar_historico("Resposta Rápida", msg_recebida[:60], res)
-                    st.session_state['rapida_temp'] = res
-            else:
-                st.warning("Cole a mensagem antes de analisar.")
+    if st.button("⚡ ANALISAR E RESPONDER"):
+        if msg_recebida.strip():
+            with st.spinner("Analisando o contexto..."):
+                prompt = (
+                    f"Analise esta mensagem e gere 3 opções estratégicas de resposta.\n"
+                    f"Mensagem recebida: '{msg_recebida}'\n"
+                    f"Quem enviou: {quem}. Objetivo: {objetivo}. Contexto: {contexto_extra or 'não informado'}.\n\n"
+                    f"REGRAS:\n"
+                    f"- NÃO afirme intenções ou sentimentos que não podem ser conhecidos\n"
+                    f"- Trabalhe apenas com padrões observáveis na mensagem\n"
+                    f"- Respostas devem soar naturais, não robóticas\n\n"
+                    f"FORMATO:\n\n"
+                    f"📊 LEITURA DO CONTEXTO:\n[O que é observável nessa mensagem — tom, abertura, oportunidades]\n\n"
+                    f"💬 OPÇÃO 1 — NATURAL\n[resposta]\nPor quê: [explicação curta]\n\n"
+                    f"💡 OPÇÃO 2 — INTERESSANTE\n[resposta]\nPor quê: [explicação curta]\n\n"
+                    f"🎯 OPÇÃO 3 — DIRETA\n[resposta]\nPor quê: [explicação curta]\n\n"
+                    f"⭐ RECOMENDAÇÃO:\n[qual das 3 é mais adequada para esse contexto e por quê]"
+                )
+                res = conexa_ia(prompt)
+                st.session_state.analises_realizadas += 1
+                st.session_state.conversas_analisadas += 1
+                verificar_conquistas()
+                salvar_historico("Resposta Rápida", msg_recebida[:60], res)
+                st.session_state['rapida_temp'] = res
+        else:
+            st.warning("Cole a mensagem antes de analisar.")
 
-        if st.session_state.get('rapida_temp'):
-            st.markdown(f"<div class='card'>{st.session_state['rapida_temp']}</div>", unsafe_allow_html=True)
-            col_cp, col_fv, col_sv = st.columns(3)
-            with col_cp:
-                st.download_button("📋 Copiar (.txt)", data=st.session_state['rapida_temp'], file_name="resposta.txt", mime="text/plain", use_container_width=True)
-            with col_fv:
-                if st.button("⭐ Favoritar", key="fav_rapida", use_container_width=True):
-                    st.session_state.biblioteca.append({'categoria':'Respostas','conteudo':st.session_state['rapida_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
-                    st.session_state.favoritos_total += 1
-                    st.success("⭐ Salvo na biblioteca!")
-            with col_sv:
-                if st.button("🃏 Carta na Manga", key="carta_rapida", use_container_width=True):
-                    st.session_state.pagina = "Carta"; st.rerun()
+    if st.session_state.get('rapida_temp'):
+        st.markdown(f"<div class='card'>{st.session_state['rapida_temp']}</div>", unsafe_allow_html=True)
+        col_cp, col_fv, col_sv = st.columns(3)
+        with col_cp:
+            st.download_button("📋 Copiar (.txt)", data=st.session_state['rapida_temp'], file_name="resposta.txt", mime="text/plain", use_container_width=True)
+        with col_fv:
+            if st.button("⭐ Favoritar", key="fav_rapida", use_container_width=True):
+                st.session_state.biblioteca.append({'categoria':'Respostas','conteudo':st.session_state['rapida_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
+                st.session_state.favoritos_total += 1
+                st.success("⭐ Salvo na biblioteca!")
+        with col_sv:
+            if st.button("🃏 Carta na Manga", key="carta_rapida", use_container_width=True):
+                st.session_state.pagina = "Carta"; st.rerun()
 
     # ──────────────────────────────────────────
     # CARTA NA MANGA
@@ -590,48 +591,48 @@ elif st.session_state.etapa == "App":
             if conversa_carta.strip():
                 with st.spinner("A IA está procurando novas possibilidades..."):
                     prompt = (
-                        f"Analise esta conversa e gere 5 cartas na manga — novas possibilidades de interação.\n"
-                        f"Conversa:\n{conversa_carta}\n"
-                        f"Contexto: {contexto_carta or 'não informado'}\n\n"
-                        f"REGRAS:\n"
-                        f"- Trabalhe APENAS com o que está na conversa\n"
-                        f"- NÃO fabrique fatos, interesses ou sentimentos\n"
-                        f"- Cada carta deve ser genuinamente diferente das outras\n\n"
-                        f"FORMATO:\n\n"
-                        f"🃏 CARTA #01 — RESGATAR UM ASSUNTO\n"
-                        f"[mensagem sugerida]\n"
-                        f"Por que essa carta: [explicação]\n\n"
-                        f"🃏 CARTA #02 — MUDAR O RUMO\n"
-                        f"[mensagem sugerida]\n"
-                        f"Por que essa carta: [explicação]\n\n"
-                        f"🃏 CARTA #03 — PERGUNTA-CHAVE\n"
-                        f"[pergunta aberta]\n"
-                        f"Por que essa carta: [explicação]\n\n"
-                        f"🃏 CARTA #04 — LEVEZA\n"
-                        f"[abordagem descontraída]\n"
-                        f"Por que essa carta: [explicação]\n\n"
-                        f"🛡️ CARTA #05 — DAR ESPAÇO\n"
-                        f"[avaliação de quando não insistir é o melhor caminho]\n\n"
-                        f"⭐ CARTA RECOMENDADA: [número e por quê é a melhor agora]"
-                    )
-                    res = conexa_ia(prompt)
-                    st.session_state.cartas_usadas += 1
-                    verificar_conquistas()
-                    salvar_historico("Carta na Manga", conversa_carta[:60], res)
-                    st.session_state['carta_temp'] = res
-            else:
-                st.warning("Cole a conversa antes de gerar.")
+                    f"Analise esta conversa e gere 5 cartas na manga — novas possibilidades de interação.\n"
+                    f"Conversa:\n{conversa_carta}\n"
+                    f"Contexto: {contexto_carta or 'não informado'}\n\n"
+                    f"REGRAS:\n"
+                    f"- Trabalhe APENAS com o que está na conversa\n"
+                    f"- NÃO fabrique fatos, interesses ou sentimentos\n"
+                    f"- Cada carta deve ser genuinamente diferente das outras\n\n"
+                    f"FORMATO:\n\n"
+                    f"🃏 CARTA #01 — RESGATAR UM ASSUNTO\n"
+                    f"[mensagem sugerida]\n"
+                    f"Por que essa carta: [explicação]\n\n"
+                    f"🃏 CARTA #02 — MUDAR O RUMO\n"
+                    f"[mensagem sugerida]\n"
+                    f"Por que essa carta: [explicação]\n\n"
+                    f"🃏 CARTA #03 — PERGUNTA-CHAVE\n"
+                    f"[pergunta aberta]\n"
+                    f"Por que essa carta: [explicação]\n\n"
+                    f"🃏 CARTA #04 — LEVEZA\n"
+                    f"[abordagem descontraída]\n"
+                    f"Por que essa carta: [explicação]\n\n"
+                    f"🛡️ CARTA #05 — DAR ESPAÇO\n"
+                    f"[avaliação de quando não insistir é o melhor caminho]\n\n"
+                    f"⭐ CARTA RECOMENDADA: [número e por quê é a melhor agora]"
+                )
+                res = conexa_ia(prompt)
+                st.session_state.cartas_usadas += 1
+                verificar_conquistas()
+                salvar_historico("Carta na Manga", conversa_carta[:60], res)
+                st.session_state['carta_temp'] = res
+        else:
+            st.warning("Cole a conversa antes de gerar.")
 
-        if st.session_state.get('carta_temp'):
-            st.markdown(f"<div class='carta-box'>{st.session_state['carta_temp']}</div>", unsafe_allow_html=True)
-            col_cp, col_fv = st.columns(2)
-            with col_cp:
-                st.download_button("📋 Baixar (.txt)", data=st.session_state['carta_temp'], file_name="carta_manga.txt", mime="text/plain", use_container_width=True)
-            with col_fv:
-                if st.button("⭐ Favoritar cartas", key="fav_carta", use_container_width=True):
-                    st.session_state.biblioteca.append({'categoria':'Cartas na Manga','conteudo':st.session_state['carta_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
-                    st.session_state.favoritos_total += 1
-                    st.success("⭐ Salvo!")
+    if st.session_state.get('carta_temp'):
+        st.markdown(f"<div class='carta-box'>{st.session_state['carta_temp']}</div>", unsafe_allow_html=True)
+        col_cp, col_fv = st.columns(2)
+        with col_cp:
+            st.download_button("📋 Baixar (.txt)", data=st.session_state['carta_temp'], file_name="carta_manga.txt", mime="text/plain", use_container_width=True)
+        with col_fv:
+            if st.button("⭐ Favoritar cartas", key="fav_carta", use_container_width=True):
+                st.session_state.biblioteca.append({'categoria':'Cartas na Manga','conteudo':st.session_state['carta_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
+                st.session_state.favoritos_total += 1
+                st.success("⭐ Salvo!")
 
     # ──────────────────────────────────────────
     # TURBINAR
@@ -647,39 +648,39 @@ elif st.session_state.etapa == "App":
         with col2:
             contexto_turb = st.text_input("Contexto:", placeholder="ex: primeira mensagem, resposta após sumiço...")
 
-        if st.button("💬 TURBINAR MENSAGEM"):
-            if msg_orig.strip():
-                with st.spinner("Aprimorando..."):
-                    prompt = (
-                        f"Avalie e melhore esta mensagem.\n"
-                        f"Mensagem original: '{msg_orig}'\n"
-                        f"Estilo desejado: {estilo}. Contexto: {contexto_turb or 'não informado'}.\n\n"
-                        f"FORMATO:\n\n"
-                        f"📊 AVALIAÇÃO DA MENSAGEM ORIGINAL:\n"
-                        f"• Clareza: [nota]/10\n"
-                        f"• Naturalidade: [nota]/10\n"
-                        f"• Tom: [análise]\n"
-                        f"• Reciprocidade: [abre espaço para o outro?]\n"
-                        f"• Pressão: [há pressão excessiva?]\n\n"
-                        f"❌ ANTES:\n{msg_orig}\n\n"
-                        f"✅ DEPOIS — ESTILO {estilo.upper()}:\n[mensagem aprimorada]\n\n"
-                        f"🧠 POR QUE MELHOROU:\n[explicação objetiva das mudanças]\n\n"
-                        f"💡 VARIAÇÃO ALTERNATIVA:\n[outra versão em estilo diferente]"
-                    )
-                    res = conexa_ia(prompt)
-                    st.session_state.mensagens_aprimoradas += 1
-                    verificar_conquistas()
-                    salvar_historico("Turbinar", msg_orig[:60], res)
-                    st.session_state['turb_temp'] = res
-            else:
-                st.warning("Cole a mensagem antes de turbinar.")
+    if st.button("💬 TURBINAR MENSAGEM"):
+        if msg_orig.strip():
+            with st.spinner("Aprimorando..."):
+                prompt = (
+                    f"Avalie e melhore esta mensagem.\n"
+                    f"Mensagem original: '{msg_orig}'\n"
+                    f"Estilo desejado: {estilo}. Contexto: {contexto_turb or 'não informado'}.\n\n"
+                    f"FORMATO:\n\n"
+                    f"📊 AVALIAÇÃO DA MENSAGEM ORIGINAL:\n"
+                    f"• Clareza: [nota]/10\n"
+                    f"• Naturalidade: [nota]/10\n"
+                    f"• Tom: [análise]\n"
+                    f"• Reciprocidade: [abre espaço para o outro?]\n"
+                    f"• Pressão: [há pressão excessiva?]\n\n"
+                    f"❌ ANTES:\n{msg_orig}\n\n"
+                    f"✅ DEPOIS — ESTILO {estilo.upper()}:\n[mensagem aprimorada]\n\n"
+                    f"🧠 POR QUE MELHOROU:\n[explicação objetiva das mudanças]\n\n"
+                    f"💡 VARIAÇÃO ALTERNATIVA:\n[outra versão em estilo diferente]"
+                )
+                res = conexa_ia(prompt)
+                st.session_state.mensagens_aprimoradas += 1
+                verificar_conquistas()
+                salvar_historico("Turbinar", msg_orig[:60], res)
+                st.session_state['turb_temp'] = res
+        else:
+            st.warning("Cole a mensagem antes de turbinar.")
 
-        if st.session_state.get('turb_temp'):
-            st.markdown(f"<div class='card'>{st.session_state['turb_temp']}</div>", unsafe_allow_html=True)
-            if st.button("⭐ Favoritar", key="fav_turb"):
-                st.session_state.biblioteca.append({'categoria':'Mensagens Turbinadas','conteudo':st.session_state['turb_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
-                st.session_state.favoritos_total += 1
-                st.success("⭐ Salvo!")
+    if st.session_state.get('turb_temp'):
+        st.markdown(f"<div class='card'>{st.session_state['turb_temp']}</div>", unsafe_allow_html=True)
+        if st.button("⭐ Favoritar", key="fav_turb"):
+            st.session_state.biblioteca.append({'categoria':'Mensagens Turbinadas','conteudo':st.session_state['turb_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
+            st.session_state.favoritos_total += 1
+            st.success("⭐ Salvo!")
 
     # ──────────────────────────────────────────
     # RAIO-X DA CONVERSA
@@ -694,44 +695,44 @@ elif st.session_state.etapa == "App":
             if conversa_rx.strip():
                 with st.spinner("Fazendo o raio-X..."):
                     prompt = (
-                        f"Faça uma análise completa desta conversa.\n\n"
-                        f"IMPORTANTE: NÃO afirme sentimentos ou intenções. Apresente APENAS padrões observáveis.\n\n"
-                        f"Conversa:\n{conversa_rx}\n\n"
-                        f"FORMATO:\n\n"
-                        f"📊 01 — FLUIDEZ\n"
-                        f"Status: [🟢 Fluindo / 🟡 Perdendo ritmo / 🔴 Travada]\n"
-                        f"[análise observável]\n\n"
-                        f"🤝 02 — RECIPROCIDADE\n"
-                        f"[Quem inicia, tamanho das respostas, perguntas feitas, equilíbrio — sem afirmar sentimentos]\n\n"
-                        f"💬 03 — QUALIDADE DA COMUNICAÇÃO\n"
-                        f"• Clareza: [nota]/10\n• Naturalidade: [nota]/10\n• Escuta: [nota]/10\n"
-                        f"• Perguntas: [quantidade e qualidade]\n• Pressão: [há?]\n\n"
-                        f"🎯 04 — ASSUNTOS\n"
-                        f"✅ Que funcionaram: [lista]\n"
-                        f"💡 Que podem ser explorados: [lista]\n"
-                        f"📉 Que perderam força: [lista]\n\n"
-                        f"🚦 05 — RADAR\n"
-                        f"[🟢 / 🟡 / 🔴 com justificativa baseada em padrões observáveis]\n\n"
-                        f"🎯 06 — PRÓXIMO PASSO RECOMENDADO:\n[ação concreta]"
-                    )
-                    res = conexa_ia(prompt)
-                    st.session_state.analises_realizadas += 1
-                    st.session_state.conversas_analisadas += 1
-                    verificar_conquistas()
-                    salvar_historico("Raio-X", conversa_rx[:60], res)
-                    st.session_state['rx_temp'] = res
-            else:
-                st.warning("Cole a conversa antes de analisar.")
+                    f"Faça uma análise completa desta conversa.\n\n"
+                    f"IMPORTANTE: NÃO afirme sentimentos ou intenções. Apresente APENAS padrões observáveis.\n\n"
+                    f"Conversa:\n{conversa_rx}\n\n"
+                    f"FORMATO:\n\n"
+                    f"📊 01 — FLUIDEZ\n"
+                    f"Status: [🟢 Fluindo / 🟡 Perdendo ritmo / 🔴 Travada]\n"
+                    f"[análise observável]\n\n"
+                    f"🤝 02 — RECIPROCIDADE\n"
+                    f"[Quem inicia, tamanho das respostas, perguntas feitas, equilíbrio — sem afirmar sentimentos]\n\n"
+                    f"💬 03 — QUALIDADE DA COMUNICAÇÃO\n"
+                    f"• Clareza: [nota]/10\n• Naturalidade: [nota]/10\n• Escuta: [nota]/10\n"
+                    f"• Perguntas: [quantidade e qualidade]\n• Pressão: [há?]\n\n"
+                    f"🎯 04 — ASSUNTOS\n"
+                    f"✅ Que funcionaram: [lista]\n"
+                    f"💡 Que podem ser explorados: [lista]\n"
+                    f"📉 Que perderam força: [lista]\n\n"
+                    f"🚦 05 — RADAR\n"
+                    f"[🟢 / 🟡 / 🔴 com justificativa baseada em padrões observáveis]\n\n"
+                    f"🎯 06 — PRÓXIMO PASSO RECOMENDADO:\n[ação concreta]"
+                )
+                res = conexa_ia(prompt)
+                st.session_state.analises_realizadas += 1
+                st.session_state.conversas_analisadas += 1
+                verificar_conquistas()
+                salvar_historico("Raio-X", conversa_rx[:60], res)
+                st.session_state['rx_temp'] = res
+        else:
+            st.warning("Cole a conversa antes de analisar.")
 
-        if st.session_state.get('rx_temp'):
-            st.markdown(f"<div class='card'>{st.session_state['rx_temp']}</div>", unsafe_allow_html=True)
-            col_dl, col_fv = st.columns(2)
-            with col_dl:
-                st.download_button("📋 Baixar (.txt)", data=st.session_state['rx_temp'], file_name="raio_x.txt", mime="text/plain", use_container_width=True)
-            with col_fv:
-                if st.button("⭐ Favoritar", key="fav_rx", use_container_width=True):
-                    st.session_state.biblioteca.append({'categoria':'Análises','conteudo':st.session_state['rx_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
-                    st.session_state.favoritos_total += 1; st.success("⭐ Salvo!")
+    if st.session_state.get('rx_temp'):
+        st.markdown(f"<div class='card'>{st.session_state['rx_temp']}</div>", unsafe_allow_html=True)
+        col_dl, col_fv = st.columns(2)
+        with col_dl:
+            st.download_button("📋 Baixar (.txt)", data=st.session_state['rx_temp'], file_name="raio_x.txt", mime="text/plain", use_container_width=True)
+        with col_fv:
+            if st.button("⭐ Favoritar", key="fav_rx", use_container_width=True):
+                st.session_state.biblioteca.append({'categoria':'Análises','conteudo':st.session_state['rx_temp'],'data':datetime.now().strftime('%d/%m %H:%M')})
+                st.session_state.favoritos_total += 1; st.success("⭐ Salvo!")
 
     # ──────────────────────────────────────────
     # ROLEPLAY
@@ -742,92 +743,92 @@ elif st.session_state.etapa == "App":
 
         if 'roleplay_chat' not in st.session_state:
             st.session_state.roleplay_chat = []
-        if 'roleplay_ativo' not in st.session_state:
-            st.session_state.roleplay_ativo = False
-        if 'roleplay_key' not in st.session_state:
-            st.session_state.roleplay_key = 0
+    if 'roleplay_ativo' not in st.session_state:
+        st.session_state.roleplay_ativo = False
+    if 'roleplay_key' not in st.session_state:
+        st.session_state.roleplay_key = 0
 
-        if not st.session_state.roleplay_ativo:
-            cenario = st.selectbox("Escolha o cenário:", [
-                "🤝 Conhecer alguém novo","👥 Fazer amizade","🏫 Conversar com colega",
-                "💼 Networking","🗣️ Conversa difícil","😬 Situação que causa nervosismo"])
-            nivel_role = st.selectbox("Dificuldade:", ["Fácil — pessoa receptiva","Médio — pessoa neutra","Difícil — pessoa reservada"])
+    if not st.session_state.roleplay_ativo:
+        cenario = st.selectbox("Escolha o cenário:", [
+            "🤝 Conhecer alguém novo","👥 Fazer amizade","🏫 Conversar com colega",
+            "💼 Networking","🗣️ Conversa difícil","😬 Situação que causa nervosismo"])
+        nivel_role = st.selectbox("Dificuldade:", ["Fácil — pessoa receptiva","Médio — pessoa neutra","Difícil — pessoa reservada"])
 
-            if st.button("🎭 INICIAR SIMULAÇÃO"):
-                with st.spinner("Criando o cenário..."):
-                    system_role = (
-                        f"Você é uma pessoa num simulador de conversa para treino de comunicação. "
-                        f"Cenário: {cenario}. Dificuldade: {nivel_role}. "
-                        f"Seja realista — não force perguntas, não salve a conversa artificialmente. "
-                        f"Mantenha personalidade consistente. Responda como essa pessoa responderia, "
-                        f"não como um assistente. Primeira mensagem: apresente o cenário brevemente e comece a interação."
-                    )
-                    resp = conexa_ia("Inicie o cenário com uma fala natural da personagem.", system_role)
-                    st.session_state.roleplay_chat = [{"role":"assistant","content":resp,"system":system_role}]
-                    st.session_state.roleplay_ativo = True
-                    st.session_state.roleplay_cenario = cenario
-                    st.session_state.roleplay_system = system_role
+        if st.button("🎭 INICIAR SIMULAÇÃO"):
+            with st.spinner("Criando o cenário..."):
+                system_role = (
+                    f"Você é uma pessoa num simulador de conversa para treino de comunicação. "
+                    f"Cenário: {cenario}. Dificuldade: {nivel_role}. "
+                    f"Seja realista — não force perguntas, não salve a conversa artificialmente. "
+                    f"Mantenha personalidade consistente. Responda como essa pessoa responderia, "
+                    f"não como um assistente. Primeira mensagem: apresente o cenário brevemente e comece a interação."
+                )
+                resp = conexa_ia("Inicie o cenário com uma fala natural da personagem.", system_role)
+                st.session_state.roleplay_chat = [{"role":"assistant","content":resp,"system":system_role}]
+                st.session_state.roleplay_ativo = True
+                st.session_state.roleplay_cenario = cenario
+                st.session_state.roleplay_system = system_role
+                st.rerun()
+    else:
+        st.markdown(f"**Cenário:** {st.session_state.get('roleplay_cenario','')}")
+        for msg in st.session_state.roleplay_chat:
+            if msg['role'] == 'user':
+                st.markdown(f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>🎭 Personagem:</b> {msg['content']}</div>", unsafe_allow_html=True)
+
+        msg_role = st.text_input("Sua resposta:", key=f"role_input_{st.session_state.roleplay_key}", placeholder="O que você diria?")
+
+        col_e, col_f = st.columns([4,1])
+        with col_e:
+            if st.button("📤 ENVIAR"):
+                if msg_role.strip():
+                    historico_msgs = [{"role":m["role"],"content":m["content"]} for m in st.session_state.roleplay_chat]
+                    with st.spinner("..."):
+                        try:
+                            client = Groq(api_key=st.session_state.api_key)
+                            msgs = [{"role":"system","content":st.session_state.roleplay_system}] + historico_msgs + [{"role":"user","content":msg_role}]
+                            resp = client.chat.completions.create(messages=msgs, model="llama-3.1-70b-versatile")
+                            resp_txt = resp.choices[0].message.content
+                        except Exception as e:
+                            resp_txt = f"⚠️ Erro: {e}"
+                    st.session_state.roleplay_chat.append({"role":"user","content":msg_role})
+                    st.session_state.roleplay_chat.append({"role":"assistant","content":resp_txt})
+                    st.session_state.roleplay_key += 1
                     st.rerun()
-        else:
-            st.markdown(f"**Cenário:** {st.session_state.get('roleplay_cenario','')}")
-            for msg in st.session_state.roleplay_chat:
-                if msg['role'] == 'user':
-                    st.markdown(f"<div class='chat-user'><b style='color:#C2185B;'>Você:</b> {msg['content']}</div>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<div class='chat-persona'><b style='color:#1D4ED8;'>🎭 Personagem:</b> {msg['content']}</div>", unsafe_allow_html=True)
+        with col_f:
+            if st.button("🏁 Finalizar"):
+                with st.spinner("Avaliando sua performance..."):
+                    hist_txt = "\n".join(f"{'Usuário' if m['role']=='user' else 'Personagem'}: {m['content']}" for m in st.session_state.roleplay_chat)
+                    prompt_aval = (
+                        f"Avalie a performance deste usuário na simulação de conversa.\n"
+                        f"Cenário: {st.session_state.get('roleplay_cenario','')}\n\n"
+                        f"Conversa:\n{hist_txt}\n\n"
+                        f"FORMATO:\n\n"
+                        f"🏆 AVALIAÇÃO DA SIMULAÇÃO\n\n"
+                        f"| Competência | Nota |\n|---|---|\n"
+                        f"| 🗣️ Naturalidade | [X]/10 |\n"
+                        f"| 👂 Escuta | [X]/10 |\n"
+                        f"| ❓ Qualidade das perguntas | [X]/10 |\n"
+                        f"| 🔄 Adaptação | [X]/10 |\n"
+                        f"| 🤝 Reciprocidade | [X]/10 |\n\n"
+                        f"⭐ NOTA GERAL: [X]/10\n\n"
+                        f"🟢 O QUE VOCÊ FEZ BEM:\n[feedback específico]\n\n"
+                        f"🟡 O QUE PODE MELHORAR:\n[feedback específico]\n\n"
+                        f"🎯 PRÓXIMO DESAFIO:\n[o que trabalhar na próxima simulação]"
+                    )
+                    aval = conexa_ia(prompt_aval)
+                    st.session_state.treinos_realizados += 1
+                    verificar_conquistas()
+                    salvar_historico("Roleplay", st.session_state.get('roleplay_cenario',''), aval)
+                    st.session_state['role_aval'] = aval
+                    st.session_state.roleplay_ativo = False
+                    st.session_state.roleplay_chat = []
+                    st.rerun()
 
-            msg_role = st.text_input("Sua resposta:", key=f"role_input_{st.session_state.roleplay_key}", placeholder="O que você diria?")
-
-            col_e, col_f = st.columns([4,1])
-            with col_e:
-                if st.button("📤 ENVIAR"):
-                    if msg_role.strip():
-                        historico_msgs = [{"role":m["role"],"content":m["content"]} for m in st.session_state.roleplay_chat]
-                        with st.spinner("..."):
-                            try:
-                                client = Groq(api_key=st.session_state.api_key)
-                                msgs = [{"role":"system","content":st.session_state.roleplay_system}] + historico_msgs + [{"role":"user","content":msg_role}]
-                                resp = client.chat.completions.create(messages=msgs, model="qwen2.5-72b-instruct")
-                                resp_txt = resp.choices[0].message.content
-                            except Exception as e:
-                                resp_txt = f"⚠️ Erro: {e}"
-                        st.session_state.roleplay_chat.append({"role":"user","content":msg_role})
-                        st.session_state.roleplay_chat.append({"role":"assistant","content":resp_txt})
-                        st.session_state.roleplay_key += 1
-                        st.rerun()
-            with col_f:
-                if st.button("🏁 Finalizar"):
-                    with st.spinner("Avaliando sua performance..."):
-                        hist_txt = "\n".join(f"{'Usuário' if m['role']=='user' else 'Personagem'}: {m['content']}" for m in st.session_state.roleplay_chat)
-                        prompt_aval = (
-                            f"Avalie a performance deste usuário na simulação de conversa.\n"
-                            f"Cenário: {st.session_state.get('roleplay_cenario','')}\n\n"
-                            f"Conversa:\n{hist_txt}\n\n"
-                            f"FORMATO:\n\n"
-                            f"🏆 AVALIAÇÃO DA SIMULAÇÃO\n\n"
-                            f"| Competência | Nota |\n|---|---|\n"
-                            f"| 🗣️ Naturalidade | [X]/10 |\n"
-                            f"| 👂 Escuta | [X]/10 |\n"
-                            f"| ❓ Qualidade das perguntas | [X]/10 |\n"
-                            f"| 🔄 Adaptação | [X]/10 |\n"
-                            f"| 🤝 Reciprocidade | [X]/10 |\n\n"
-                            f"⭐ NOTA GERAL: [X]/10\n\n"
-                            f"🟢 O QUE VOCÊ FEZ BEM:\n[feedback específico]\n\n"
-                            f"🟡 O QUE PODE MELHORAR:\n[feedback específico]\n\n"
-                            f"🎯 PRÓXIMO DESAFIO:\n[o que trabalhar na próxima simulação]"
-                        )
-                        aval = conexa_ia(prompt_aval)
-                        st.session_state.treinos_realizados += 1
-                        verificar_conquistas()
-                        salvar_historico("Roleplay", st.session_state.get('roleplay_cenario',''), aval)
-                        st.session_state['role_aval'] = aval
-                        st.session_state.roleplay_ativo = False
-                        st.session_state.roleplay_chat = []
-                        st.rerun()
-
-        if st.session_state.get('role_aval'):
-            st.markdown(f"<div class='avaliacao-box'>{st.session_state['role_aval']}</div>", unsafe_allow_html=True)
-            st.download_button("📋 Baixar avaliação (.txt)", data=st.session_state['role_aval'], file_name="avaliacao_roleplay.txt", mime="text/plain")
+    if st.session_state.get('role_aval'):
+        st.markdown(f"<div class='avaliacao-box'>{st.session_state['role_aval']}</div>", unsafe_allow_html=True)
+        st.download_button("📋 Baixar avaliação (.txt)", data=st.session_state['role_aval'], file_name="avaliacao_roleplay.txt", mime="text/plain")
 
 
     # ──────────────────────────────────────────
@@ -1206,7 +1207,7 @@ elif st.session_state.etapa == "App":
                             try:
                                 client_l = Groq(api_key=st.session_state.api_key)
                                 msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
-                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="qwen2.5-72b-instruct",max_tokens=25)
+                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="llama-3.1-70b-versatile",max_tokens=25)
                                 resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
                                 import re as _re2
                                 mc2 = _re2.search(r'[.!?]',resp_bruto)
@@ -1245,7 +1246,7 @@ elif st.session_state.etapa == "App":
                         arranque = f"🚀 {ev_d['arranque']}" if ev_d.get('arranque') else ""
                         for k in ['interesse','atracao','conexao','confianca','naturalidade','curiosidade','tensao']:
                             if k in ev_d: atribs[k]=max(0,min(100,ev_d[k]))
-                        st.session_state.lj_atributos = atribs
+                            st.session_state.lj_atributos = atribs
                         st.session_state.lj_conexo = max(0,min(100,conexo+delta))
                         if ev_d.get('missao_cumprida'): st.session_state.lj_missao_cumprida=True
                         st.session_state.lj_combo = st.session_state.lj_combo+1 if delta>5 else 0
