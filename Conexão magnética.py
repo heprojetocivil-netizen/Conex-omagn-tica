@@ -225,7 +225,7 @@ def conexa_ia(prompt, system_extra=""):
         )
         resp = client.chat.completions.create(
             messages=[{"role":"system","content":system},{"role":"user","content":prompt}],
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-specdec",
         )
         return resp.choices[0].message.content
     except Exception as e:
@@ -378,52 +378,39 @@ if st.session_state.etapa == "Login":
         st.markdown("🔑 Crie grátis em <a href='https://console.groq.com/keys' target='_blank' style='color:#C2185B;'>console.groq.com/keys</a>", unsafe_allow_html=True)
 
 elif st.session_state.etapa == "App":
-
-
-    em_partida = st.session_state.get('pagina') == 'Dialogo'
     faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
+    em_partida = st.session_state.get('pagina') == 'Dialogo'
 
     if not em_partida:
         barra_salvar()
-        # NAVBAR linha 1 — 💋 Mestre da Lábia como ícone especial
+        # ── NAVBAR ──
         cols1 = st.columns(7)
         nav1 = [("🏠","Home"),("⚡","Rapida"),("🃏","Carta"),("💬","Turbinar"),("🧠","Analisar"),("🎭","Roleplay"),("💋","Labia")]
         lb1 = {"Home":"Dashboard","Rapida":"Resposta Rápida","Carta":"Carta na Manga",
-           "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
-           "Roleplay":"Simulador de Conversa","Labia":"💋 Mestre da Lábia — Torne-se um Sedutor Imparável ⭐"}
+               "Turbinar":"Turbinar Mensagem","Analisar":"Raio-X da Conversa",
+               "Roleplay":"Simulador de Conversa","Labia":"💋 Mestre da Lábia ⭐"}
         for i,(ic,pg) in enumerate(nav1):
             ch = list(lb1.keys())[i]
             if cols1[i].button(ic, key=f"nav1_{ch}", help=lb1[ch]):
                 st.session_state.pagina = ch; st.rerun()
         st.markdown("""
-        <style>
-        @keyframes pisca { 0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1} }
-        .labia-hint { text-align:right; font-size:0.7em; font-weight:700;
-        color:#C2185B; animation:pisca 2s ease-in-out infinite;
-        margin-top:-4px; margin-bottom:2px; }
-        .stApp .labia-hint { color:#C2185B !important; }
-        </style>
-        <div class='labia-hint'>💋 ← Mestre da Lábia ⭐</div>
+        <style>@keyframes pisca{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+        .labia-hint{text-align:right;font-size:.7em;font-weight:700;color:#C2185B;
+        animation:pisca 2s ease-in-out infinite;margin-top:-4px;}
+        </style><div class='labia-hint'>💋 ← Mestre da Lábia ⭐</div>
         """, unsafe_allow_html=True)
-        # NAVBAR linha 2
         cols2 = st.columns(7)
         nav2 = [("📚","Biblioteca"),("📸","Perfil"),("⚔️","Comparar"),("🗓️","Plano"),("📈","Progresso"),("📋","Resumo"),("🏆","Conquistas")]
         lb2 = {"Biblioteca":"Biblioteca Inteligente","Perfil":"Leitor de Perfil",
-           "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
-           "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
+               "Comparar":"Comparar Conversas","Plano":"Plano 7 Dias",
+               "Progresso":"Minha Evolução","Resumo":"Relatório Semanal","Conquistas":"Conquistas"}
         for i,(ic,pg) in enumerate(nav2):
             ch = list(lb2.keys())[i]
             if cols2[i].button(ic, key=f"nav2_{ch}", help=lb2[ch]):
                 st.session_state.pagina = ch; st.rerun()
-
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
-    # Roteamento de páginas
-    # Quando em diálogo, para aqui — o elif Dialogo já foi processado acima
-    # Se estiver em diálogo, para aqui e vai direto para o Dialogo
-
-    # Variáveis compartilhadas entre páginas
-
+    # ── ROTEAMENTO ──
     if st.session_state.pagina == "Dialogo":
         import time as _t, json as _j, re as _r
 
@@ -603,7 +590,7 @@ elif st.session_state.etapa == "App":
                             try:
                                 client_l = Groq(api_key=st.session_state.api_key)
                                 msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
-                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="llama-3.1-70b-versatile",max_tokens=25)
+                                resp_l = client_l.chat.completions.create(messages=msgs_l,model="llama-3.3-70b-specdec",max_tokens=25)
                                 resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
                                 import re as _re2
                                 mc2 = _re2.search(r'[.!?]',resp_bruto)
@@ -671,6 +658,10 @@ elif st.session_state.etapa == "App":
 
             _t.sleep(0.8); st.rerun()
 
+
+        st.stop()
+
+        st.stop()
 
         st.stop()
 
@@ -1040,7 +1031,7 @@ elif st.session_state.etapa == "App":
                         try:
                             client = Groq(api_key=st.session_state.api_key)
                             msgs = [{"role":"system","content":st.session_state.roleplay_system}] + historico_msgs + [{"role":"user","content":msg_role}]
-                            resp = client.chat.completions.create(messages=msgs, model="llama-3.1-70b-versatile")
+                            resp = client.chat.completions.create(messages=msgs, model="llama-3.3-70b-specdec")
                             resp_txt = resp.choices[0].message.content
                         except Exception as e:
                             resp_txt = f"⚠️ Erro: {e}"
@@ -1513,6 +1504,27 @@ elif st.session_state.etapa == "App":
                     f"<div style='font-weight:700;font-size:0.88em;color:#1A1A2E;'>{nome}</div>"
                     f"<div style='font-size:0.75em;color:#6B7280;'>{desc}</div>"
                     f"</div>", unsafe_allow_html=True)
+
+# --- RODAPÉ ---
+st.markdown(
+    "<div style='text-align:center;color:#999;font-size:0.8em;margin-top:60px;'>"
+    "© 2026 CONEXA IA — Inteligência para Conversas · Quiz Com Prêmios"
+    "</div>", unsafe_allow_html=True
+)
+
+# --- RODAPÉ ---
+st.markdown(
+    "<div style='text-align:center;color:#999;font-size:0.8em;margin-top:60px;'>"
+    "© 2026 CONEXA IA — Inteligência para Conversas · Quiz Com Prêmios"
+    "</div>", unsafe_allow_html=True
+)
+
+# --- RODAPÉ ---
+st.markdown(
+    "<div style='text-align:center;color:#999;font-size:0.8em;margin-top:60px;'>"
+    "© 2026 CONEXA IA — Inteligência para Conversas · Quiz Com Prêmios"
+    "</div>", unsafe_allow_html=True
+)
 
 # --- RODAPÉ ---
 st.markdown(
