@@ -510,26 +510,50 @@ elif st.session_state.etapa == "App":
         if st.session_state.lj_missao_cumprida:
             st.markdown("<div style='font-size:0.75em;color:#22C55E;font-weight:600;text-align:center;'>🎯 MISSÃO CUMPRIDA!</div>", unsafe_allow_html=True)
 
-        # Inatividade
-        ts_p = st.session_state.lj_ts_persona; ts_u = st.session_state.lj_ts_usuario
-        INAT = {1:60,2:50,3:40}; QINAT = {1:3,2:6,3:10}
-        if ts_p>0 and ts_u<ts_p:
-            inat = _t.time()-ts_p
-            if inat > INAT.get(fase_n,60):
-                queda = min(int(inat/INAT.get(fase_n,60))*QINAT.get(fase_n,5),15)
-                novo_c = max(0,conexo-queda)
-                if novo_c!=conexo: st.session_state.lj_conexo=novo_c
+        # CONEXÔMETRO + TIMER + decaimento por inatividade
+        # CORREÇÃO (botão duplicado): isso costumava rodar preso a um loop
+        # "time.sleep(2) + st.rerun()" no final da página, que recriava a
+        # tela INTEIRA (inclusive o botão ENVIAR) a cada 2s. Sob qualquer
+        # atraso de rede, o Streamlit podia renderizar o botão duas vezes
+        # antes de remover a versão antiga, dando a impressão de duplicidade.
+        # Agora só este pequeno widget se atualiza sozinho a cada 2s
+        # (st.fragment), sem tocar no resto da página / nos botões.
+        @st.fragment(run_every=2)
+        def _timer_widget():
+            ts_p = st.session_state.lj_ts_persona; ts_u = st.session_state.lj_ts_usuario
+            INAT = {1:60,2:50,3:40}; QINAT = {1:3,2:6,3:10}
+            if ts_p>0 and ts_u<ts_p:
+                inat = _t.time()-ts_p
+                if inat > INAT.get(fase_n,60):
+                    queda = min(int(inat/INAT.get(fase_n,60))*QINAT.get(fase_n,5),15)
+                    novo_c = max(0,st.session_state.lj_conexo-queda)
+                    if novo_c!=st.session_state.lj_conexo: st.session_state.lj_conexo=novo_c
 
-        # CONEXÔMETRO + TIMER
-        st.markdown(f"""
-        <div style='background:#fff;border:2px solid {cor_c};border-radius:10px;padding:7px 14px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'>
-        <span style='font-size:0.72em;color:#64748B;font-weight:600;white-space:nowrap;'>❤️ CONEXÔMETRO</span>
-        <div style='flex:1;background:#F1F5F9;border-radius:999px;height:9px;overflow:hidden;'>
-        <div style='height:100%;border-radius:999px;background:{cor_c};width:{conexo}%;'></div></div>
-        <span style='font-size:0.95em;font-weight:700;color:{cor_c};white-space:nowrap;'>{conexo} {estado(conexo)}</span>
-        <span style='color:#94A3B8;border-left:1px solid #E2E8F0;padding-left:10px;font-size:0.72em;'>⏱️</span>
-        <span style='font-size:1em;font-weight:700;color:{cor_t};white-space:nowrap;'>{mins_r:02d}:{segs_r:02d}</span>
-        </div>""", unsafe_allow_html=True)
+            _conexo = st.session_state.lj_conexo
+            _decorrido = _t.time() - st.session_state.lj_inicio
+            _restante  = max(0, st.session_state.lj_duracao - _decorrido)
+            _mins_r, _segs_r = int(_restante//60), int(_restante%60)
+            _pct_t = max(0.0, 1-_decorrido/st.session_state.lj_duracao)
+            _cor_t = "#22C55E" if _pct_t>0.5 else ("#B45309" if _pct_t>0.2 else "#B91C1C")
+            _cor_c = "#22C55E" if _conexo>60 else ("#F59E0B" if _conexo>30 else "#EF4444")
+
+            st.markdown(f"""
+            <div style='background:#fff;border:2px solid {_cor_c};border-radius:10px;padding:7px 14px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'>
+            <span style='font-size:0.72em;color:#64748B;font-weight:600;white-space:nowrap;'>❤️ CONEXÔMETRO</span>
+            <div style='flex:1;background:#F1F5F9;border-radius:999px;height:9px;overflow:hidden;'>
+            <div style='height:100%;border-radius:999px;background:{_cor_c};width:{_conexo}%;'></div></div>
+            <span style='font-size:0.95em;font-weight:700;color:{_cor_c};white-space:nowrap;'>{_conexo} {estado(_conexo)}</span>
+            <span style='color:#94A3B8;border-left:1px solid #E2E8F0;padding-left:10px;font-size:0.72em;'>⏱️</span>
+            <span style='font-size:1em;font-weight:700;color:{_cor_t};white-space:nowrap;'>{_mins_r:02d}:{_segs_r:02d}</span>
+            </div>""", unsafe_allow_html=True)
+
+            # Só quando o tempo/conexão realmente acabou é que forçamos um
+            # rerun completo da página, para cair no bloco de encerramento
+            # (FIM) definido mais abaixo.
+            if _restante <= 0 or _conexo <= 0:
+                st.rerun()
+
+        _timer_widget()
 
         # FIM
         if restante<=0 or conexo<=0:
@@ -596,6 +620,16 @@ elif st.session_state.etapa == "App":
                             aviso_pes = f"\nAVISO PESSOAL: Aniversario={f2.get('aniversario','?')}, Cidade={f2.get('cidade','?')}, Profissao={f2.get('profissao','?')}."
 
                         ultima = chat[-1]['content'] if chat else ''
+                        # CORREÇÃO (respostas repetitivas): mostramos à IA as últimas
+                        # falas DELA MESMA e proibimos repeti-las (nem com sinônimos
+                        # óbvios), além de subir a temperatura da chamada abaixo —
+                        # sem isso o modelo tende a convergir sempre para as mesmas
+                        # interjeições curtas ("Ah, sério?", "Nossa!", etc).
+                        falas_anteriores = [m['content'] for m in chat if m['role']=='assistant'][-4:]
+                        aviso_rep = (
+                            f"\nSUAS ÚLTIMAS FALAS (NÃO repita estas frases nem comece do mesmo jeito de novo): "
+                            + " | ".join(falas_anteriores)
+                        ) if falas_anteriores else ""
                         sys_p = (
                             f"Você é {nome_p}, {f2.get('profissao','')}, {f2.get('cidade','')}.\n"
                             f"Personalidade: {dados_p.get('personalidade','')}.\n"
@@ -608,24 +642,33 @@ elif st.session_state.etapa == "App":
                             f"- Reaja ao que foi dito agora — não continue assuntos antigos.\n"
                             f"- Se mudar de assunto, acompanhe.\n"
                             f"- Sem filosofia. Sem explicação. Só reaja.\n"
+                            f"- Varie o jeito de começar a frase — não repita sempre a mesma interjeição ('Ah', 'Nossa', 'Sério').\n"
                             f"- NUNCA revele que é IA."
-                            + aviso_pes
+                            + aviso_pes + aviso_rep
                         )
+
+                        # Fallbacks variados: antes havia UMA frase fixa para qualquer
+                        # falha/erro de API, o que por si só gerava repetição visível
+                        # sempre que a chamada falhava ou vinha vazia.
+                        FALLBACKS_L = ["Hmm, conta mais!","Sério isso?","Kkk, e aí, o que mais?","Conta essa história direito!","Não creio, e depois?","Uau, sério mesmo?"]
 
                         hist = [{"role":m["role"],"content":m["content"]} for m in chat[-6:]]
                         with st.spinner(""):
                             try:
                                 client_l = Groq(api_key=st.session_state.api_key)
                                 msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
-                                resp_l = client_l.chat.completions.create(messages=msgs_l,model=GROQ_MODEL,max_tokens=25)
+                                resp_l = client_l.chat.completions.create(
+                                    messages=msgs_l, model=GROQ_MODEL, max_tokens=40,
+                                    temperature=1.05, top_p=0.95,
+                                )
                                 resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
                                 import re as _re2
                                 mc2 = _re2.search(r'[.!?]',resp_bruto)
                                 resp_txt = resp_bruto[:mc2.end()].strip() if mc2 else ' '.join(resp_bruto.split()[:10])
                                 if not resp_txt.strip():
-                                    resp_txt = "Hmm, conta mais!"
+                                    resp_txt = random.choice(FALLBACKS_L)
                             except Exception as e:
-                                resp_txt = "É mesmo?"
+                                resp_txt = random.choice(FALLBACKS_L)
 
                         # Avaliador
                         CRIT = {
@@ -688,12 +731,6 @@ elif st.session_state.etapa == "App":
                 if st.button("🚩 Sair",key="lj_sair",use_container_width=True):
                     st.session_state.lj_ativo=False; st.session_state.lj_chat=[]
                     st.session_state.pagina="Labia"; st.rerun()
-
-            # Atualiza o cronômetro periodicamente. Um intervalo curto demais (ex: 0.8s)
-            # faz o app inteiro re-renderizar rápido demais, o que pode causar telas
-            # sobrepostas/duplicadas no navegador. 2s é suficiente para o timer parecer fluido.
-            _t.sleep(2)
-            st.rerun()
 
         st.stop()
 
