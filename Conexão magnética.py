@@ -134,6 +134,9 @@ CONQUISTAS_DEF = [
     ("don_juan",           "👑 Don Juan",                 "Concluiu o Nível 7 — Don Juan"),
 ]
 
+# CORREÇÃO: nomes alinhados com o que o restante do código realmente usa
+# (antes havia lj_historico_cenarios / lj_hist_cenarios, lj_fases_concluidas / lj_fases_ok etc,
+# fazendo o progresso do "Mestre da Lábia" nunca ser salvo no .json)
 CHAVES_SALVAR = [
     'usuario', 'historico', 'biblioteca', 'resumo_semanal',
     'plano_conquista', 'plano_pessoa',
@@ -143,6 +146,9 @@ CHAVES_SALVAR = [
     'conquistas', 'faixa_atual', 'historico_personagens',
     'labia_nivel', 'labia_chat', 'labia_personagem', 'labia_falha_anterior',
     'objetivos_usuario',
+    # Mestre da Lábia
+    'lj_hist_cenarios', 'lj_hist_aberturas', 'lj_hist_partidas',
+    'lj_fases_ok', 'lj_personagens_ok', 'lj_titulo', 'lj_desbloqueado',
 ]
 
 def gerar_json():
@@ -201,25 +207,24 @@ defaults = {
     'labia_nivel': 1, 'labia_chat': [], 'labia_personagem': None,
     'labia_falha_anterior': None, 'objetivos_usuario': [],
     'labia_inicio': 0, 'labia_duracao': 180, 'labia_encerrado': False,
-    # Mestre da Lábia
+    # Mestre da Lábia (nomes corrigidos para bater com o resto do app)
     'lj_fase': 1, 'lj_personagem_sel': 'Rafaela',
     'lj_ativo': False, 'lj_chat': [], 'lj_conexo': 100,
     'lj_atributos': {'interesse':50,'atracao':50,'conexao':50,'confianca':50,'naturalidade':50,'curiosidade':50,'tensao':20},
     'lj_inicio': 0, 'lj_duracao': 300,
     'lj_missao': '', 'lj_missao_cumprida': False,
     'lj_aval': None, 'lj_arranques': [],
-    'lj_historico_cenarios': [], 'lj_historico_aberturas': [],
+    'lj_hist_cenarios': [], 'lj_hist_aberturas': [],
     'lj_ts_persona': 0, 'lj_ts_usuario': 0,
     'lj_combo': 0,
-    'lj_fases_concluidas': 0,
-    'lj_titulo': 'Paquerador',
-    'lj_personagens_desbloqueadas': ['Rafaela'],
-    'lj_perfil_estilo': None,
-    'lj_historico_partidas': [],
+    'lj_fases_ok': 0,
+    'lj_titulo': '🥉 Paquerador',
+    'lj_personagens_ok': ['Rafaela'],
+    'lj_hist_partidas': [],
     'lj_desbloqueado': False,
     'lj_ficha': {}, 'lj_ficha_resumo': '',
     'lj_nome_persona': '', 'lj_dados_persona': {},
-    'lj_cenario': '', 'lj_cenario_label': '',
+    'lj_cenario': '',
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -393,7 +398,6 @@ if st.session_state.etapa == "Login":
 
 elif st.session_state.etapa == "App":
 
-
     em_partida = st.session_state.get('pagina') == 'Dialogo'
 
     if not em_partida:
@@ -430,10 +434,6 @@ elif st.session_state.etapa == "App":
                 st.session_state.pagina = ch; st.rerun()
 
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-    # Roteamento de páginas
-    # Quando em diálogo, para aqui — o elif Dialogo já foi processado acima
-    # Se estiver em diálogo, para aqui e vai direto para o Dialogo
 
     # Variáveis compartilhadas entre páginas
     faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
@@ -685,9 +685,7 @@ elif st.session_state.etapa == "App":
 
             _t.sleep(0.8); st.rerun()
 
-
         st.stop()
-
 
     faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
 
@@ -848,7 +846,7 @@ elif st.session_state.etapa == "App":
                     st.session_state.pagina = "Carta"; st.rerun()
 
     # ──────────────────────────────────────────
-    # CARTA NA MANGA
+    # CARTA NA MANGA  (CORRIGIDO: else agora pertence ao "if conversa_carta.strip()")
     # ──────────────────────────────────────────
     elif st.session_state.pagina == "Carta":
         st.header("🃏 Carta na Manga")
@@ -861,37 +859,37 @@ elif st.session_state.etapa == "App":
             if conversa_carta.strip():
                 with st.spinner("A IA está procurando novas possibilidades..."):
                     prompt = (
-                    f"Analise esta conversa e gere 5 cartas na manga — novas possibilidades de interação.\n"
-                    f"Conversa:\n{conversa_carta}\n"
-                    f"Contexto: {contexto_carta or 'não informado'}\n\n"
-                    f"REGRAS:\n"
-                    f"- Trabalhe APENAS com o que está na conversa\n"
-                    f"- NÃO fabrique fatos, interesses ou sentimentos\n"
-                    f"- Cada carta deve ser genuinamente diferente das outras\n\n"
-                    f"FORMATO:\n\n"
-                    f"🃏 CARTA #01 — RESGATAR UM ASSUNTO\n"
-                    f"[mensagem sugerida]\n"
-                    f"Por que essa carta: [explicação]\n\n"
-                    f"🃏 CARTA #02 — MUDAR O RUMO\n"
-                    f"[mensagem sugerida]\n"
-                    f"Por que essa carta: [explicação]\n\n"
-                    f"🃏 CARTA #03 — PERGUNTA-CHAVE\n"
-                    f"[pergunta aberta]\n"
-                    f"Por que essa carta: [explicação]\n\n"
-                    f"🃏 CARTA #04 — LEVEZA\n"
-                    f"[abordagem descontraída]\n"
-                    f"Por que essa carta: [explicação]\n\n"
-                    f"🛡️ CARTA #05 — DAR ESPAÇO\n"
-                    f"[avaliação de quando não insistir é o melhor caminho]\n\n"
-                    f"⭐ CARTA RECOMENDADA: [número e por quê é a melhor agora]"
-                )
-                res = conexa_ia(prompt)
-                st.session_state.cartas_usadas += 1
-                verificar_conquistas()
-                salvar_historico("Carta na Manga", conversa_carta[:60], res)
-                st.session_state['carta_temp'] = res
-        else:
-            st.warning("Cole a conversa antes de gerar.")
+                        f"Analise esta conversa e gere 5 cartas na manga — novas possibilidades de interação.\n"
+                        f"Conversa:\n{conversa_carta}\n"
+                        f"Contexto: {contexto_carta or 'não informado'}\n\n"
+                        f"REGRAS:\n"
+                        f"- Trabalhe APENAS com o que está na conversa\n"
+                        f"- NÃO fabrique fatos, interesses ou sentimentos\n"
+                        f"- Cada carta deve ser genuinamente diferente das outras\n\n"
+                        f"FORMATO:\n\n"
+                        f"🃏 CARTA #01 — RESGATAR UM ASSUNTO\n"
+                        f"[mensagem sugerida]\n"
+                        f"Por que essa carta: [explicação]\n\n"
+                        f"🃏 CARTA #02 — MUDAR O RUMO\n"
+                        f"[mensagem sugerida]\n"
+                        f"Por que essa carta: [explicação]\n\n"
+                        f"🃏 CARTA #03 — PERGUNTA-CHAVE\n"
+                        f"[pergunta aberta]\n"
+                        f"Por que essa carta: [explicação]\n\n"
+                        f"🃏 CARTA #04 — LEVEZA\n"
+                        f"[abordagem descontraída]\n"
+                        f"Por que essa carta: [explicação]\n\n"
+                        f"🛡️ CARTA #05 — DAR ESPAÇO\n"
+                        f"[avaliação de quando não insistir é o melhor caminho]\n\n"
+                        f"⭐ CARTA RECOMENDADA: [número e por quê é a melhor agora]"
+                    )
+                    res = conexa_ia(prompt)
+                    st.session_state.cartas_usadas += 1
+                    verificar_conquistas()
+                    salvar_historico("Carta na Manga", conversa_carta[:60], res)
+                    st.session_state['carta_temp'] = res
+            else:
+                st.warning("Cole a conversa antes de gerar.")
 
         if st.session_state.get('carta_temp'):
             st.markdown(f"<div class='carta-box'>{st.session_state['carta_temp']}</div>", unsafe_allow_html=True)
@@ -953,7 +951,7 @@ elif st.session_state.etapa == "App":
                 st.success("⭐ Salvo!")
 
     # ──────────────────────────────────────────
-    # RAIO-X DA CONVERSA
+    # RAIO-X DA CONVERSA  (CORRIGIDO: else agora pertence ao "if conversa_rx.strip()")
     # ──────────────────────────────────────────
     elif st.session_state.pagina == "Analisar":
         st.header("🧠 Raio-X da Conversa")
@@ -965,34 +963,34 @@ elif st.session_state.etapa == "App":
             if conversa_rx.strip():
                 with st.spinner("Fazendo o raio-X..."):
                     prompt = (
-                    f"Faça uma análise completa desta conversa.\n\n"
-                    f"IMPORTANTE: NÃO afirme sentimentos ou intenções. Apresente APENAS padrões observáveis.\n\n"
-                    f"Conversa:\n{conversa_rx}\n\n"
-                    f"FORMATO:\n\n"
-                    f"📊 01 — FLUIDEZ\n"
-                    f"Status: [🟢 Fluindo / 🟡 Perdendo ritmo / 🔴 Travada]\n"
-                    f"[análise observável]\n\n"
-                    f"🤝 02 — RECIPROCIDADE\n"
-                    f"[Quem inicia, tamanho das respostas, perguntas feitas, equilíbrio — sem afirmar sentimentos]\n\n"
-                    f"💬 03 — QUALIDADE DA COMUNICAÇÃO\n"
-                    f"• Clareza: [nota]/10\n• Naturalidade: [nota]/10\n• Escuta: [nota]/10\n"
-                    f"• Perguntas: [quantidade e qualidade]\n• Pressão: [há?]\n\n"
-                    f"🎯 04 — ASSUNTOS\n"
-                    f"✅ Que funcionaram: [lista]\n"
-                    f"💡 Que podem ser explorados: [lista]\n"
-                    f"📉 Que perderam força: [lista]\n\n"
-                    f"🚦 05 — RADAR\n"
-                    f"[🟢 / 🟡 / 🔴 com justificativa baseada em padrões observáveis]\n\n"
-                    f"🎯 06 — PRÓXIMO PASSO RECOMENDADO:\n[ação concreta]"
-                )
-                res = conexa_ia(prompt)
-                st.session_state.analises_realizadas += 1
-                st.session_state.conversas_analisadas += 1
-                verificar_conquistas()
-                salvar_historico("Raio-X", conversa_rx[:60], res)
-                st.session_state['rx_temp'] = res
-        else:
-            st.warning("Cole a conversa antes de analisar.")
+                        f"Faça uma análise completa desta conversa.\n\n"
+                        f"IMPORTANTE: NÃO afirme sentimentos ou intenções. Apresente APENAS padrões observáveis.\n\n"
+                        f"Conversa:\n{conversa_rx}\n\n"
+                        f"FORMATO:\n\n"
+                        f"📊 01 — FLUIDEZ\n"
+                        f"Status: [🟢 Fluindo / 🟡 Perdendo ritmo / 🔴 Travada]\n"
+                        f"[análise observável]\n\n"
+                        f"🤝 02 — RECIPROCIDADE\n"
+                        f"[Quem inicia, tamanho das respostas, perguntas feitas, equilíbrio — sem afirmar sentimentos]\n\n"
+                        f"💬 03 — QUALIDADE DA COMUNICAÇÃO\n"
+                        f"• Clareza: [nota]/10\n• Naturalidade: [nota]/10\n• Escuta: [nota]/10\n"
+                        f"• Perguntas: [quantidade e qualidade]\n• Pressão: [há?]\n\n"
+                        f"🎯 04 — ASSUNTOS\n"
+                        f"✅ Que funcionaram: [lista]\n"
+                        f"💡 Que podem ser explorados: [lista]\n"
+                        f"📉 Que perderam força: [lista]\n\n"
+                        f"🚦 05 — RADAR\n"
+                        f"[🟢 / 🟡 / 🔴 com justificativa baseada em padrões observáveis]\n\n"
+                        f"🎯 06 — PRÓXIMO PASSO RECOMENDADO:\n[ação concreta]"
+                    )
+                    res = conexa_ia(prompt)
+                    st.session_state.analises_realizadas += 1
+                    st.session_state.conversas_analisadas += 1
+                    verificar_conquistas()
+                    salvar_historico("Raio-X", conversa_rx[:60], res)
+                    st.session_state['rx_temp'] = res
+            else:
+                st.warning("Cole a conversa antes de analisar.")
 
         if st.session_state.get('rx_temp'):
             st.markdown(f"<div class='card'>{st.session_state['rx_temp']}</div>", unsafe_allow_html=True)
