@@ -422,15 +422,19 @@ elif st.session_state.etapa == "App":
     if em_partida:
         st.stop()
     # Se estiver em diálogo, para aqui e vai direto para o Dialogo
-    col_u, col_r = st.columns([3,1])
-    with col_u:
-        st.title(f"🧠 Olá, {st.session_state.usuario}!")
-        faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
-        st.markdown(f"<span class='badge-roxo'>{faixa[0]} {faixa[2]}</span>", unsafe_allow_html=True)
-    with col_r:
-        if st.button("🚪 Sair"):
-            for k in list(st.session_state.keys()): del st.session_state[k]
-            st.rerun()
+    # Variáveis compartilhadas entre páginas
+    faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
+
+    if st.session_state.pagina == "Home":
+        col_u, col_r = st.columns([3,1])
+        with col_u:
+            st.title(f"🧠 Olá, {st.session_state.usuario}!")
+            faixa = FAIXAS[min(st.session_state.faixa_atual-1, 6)]
+            st.markdown(f"<span class='badge-roxo'>{faixa[0]} {faixa[2]}</span>", unsafe_allow_html=True)
+        with col_r:
+            if st.button("🚪 Sair"):
+                for k in list(st.session_state.keys()): del st.session_state[k]
+                st.rerun()
 
     if not st.session_state.historico and not st.session_state.conversas_analisadas:
         arq_h = st.file_uploader("Restaurar dados (.json):", type=["json"], key="upload_home")
