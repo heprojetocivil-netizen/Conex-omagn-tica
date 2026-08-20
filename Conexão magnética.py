@@ -499,6 +499,10 @@ elif st.session_state.etapa == "App":
         chat_html += "<script>setTimeout(()=>{var c=document.getElementById('chat-c');if(c)c.scrollTop=c.scrollHeight;},80);</script>"
         st.markdown(chat_html, unsafe_allow_html=True)
 
+        # Debug discreto: só aparece se a última chamada à IA falhou de verdade
+        if st.session_state.get('lj_last_err'):
+            st.caption(f"🔧 (debug) última resposta usou fallback — erro da API: {st.session_state['lj_last_err']}")
+
         # Dica fase 1
         turno_u = sum(1 for m in chat if m['role']=='user')
         if fase_n==1 and turno_u==0:
@@ -647,28 +651,37 @@ elif st.session_state.etapa == "App":
                             + aviso_pes + aviso_rep
                         )
 
-                        # Fallbacks variados: antes havia UMA frase fixa para qualquer
-                        # falha/erro de API, o que por si só gerava repetição visível
-                        # sempre que a chamada falhava ou vinha vazia.
+                        # Fallbacks variados: só usados se a chamada à IA falhar
+                        # de verdade (ver debug abaixo) ou vier vazia.
                         FALLBACKS_L = ["Hmm, conta mais!","Sério isso?","Kkk, e aí, o que mais?","Conta essa história direito!","Não creio, e depois?","Uau, sério mesmo?"]
 
                         hist = [{"role":m["role"],"content":m["content"]} for m in chat[-6:]]
+                        resp_txt = None
+                        _erro_dbg = None
                         with st.spinner(""):
-                            try:
-                                client_l = Groq(api_key=st.session_state.api_key)
-                                msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
-                                resp_l = client_l.chat.completions.create(
-                                    messages=msgs_l, model=GROQ_MODEL, max_tokens=40,
-                                    temperature=1.05, top_p=0.95,
-                                )
-                                resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
-                                import re as _re2
-                                mc2 = _re2.search(r'[.!?]',resp_bruto)
-                                resp_txt = resp_bruto[:mc2.end()].strip() if mc2 else ' '.join(resp_bruto.split()[:10])
-                                if not resp_txt.strip():
-                                    resp_txt = random.choice(FALLBACKS_L)
-                            except Exception as e:
+                            msgs_l = [{"role":"system","content":sys_p.encode("utf-8","ignore").decode("utf-8")}]+hist+[{"role":"user","content":msg_in}]
+                            # 1ª tentativa: com temperature/top_p para variar mais a resposta.
+                            # 2ª tentativa (só roda se a 1ª falhar): sem esses parâmetros —
+                            # alguns modelos recusam certos valores de sampling (foi o que
+                            # aconteceu com temperature=1.05, que a Groq rejeita por ser >1.0
+                            # e fazia TODA resposta cair no fallback fixo).
+                            for _kwargs in ({"temperature":0.9,"top_p":0.9,"max_tokens":40}, {"max_tokens":40}):
+                                try:
+                                    client_l = Groq(api_key=st.session_state.api_key)
+                                    resp_l = client_l.chat.completions.create(messages=msgs_l, model=GROQ_MODEL, **_kwargs)
+                                    resp_bruto = resp_l.choices[0].message.content.strip().split('\n')[0]
+                                    import re as _re2
+                                    mc2 = _re2.search(r'[.!?]',resp_bruto)
+                                    resp_txt = resp_bruto[:mc2.end()].strip() if mc2 else ' '.join(resp_bruto.split()[:10])
+                                    if resp_txt.strip():
+                                        _erro_dbg = None
+                                        break
+                                except Exception as e:
+                                    _erro_dbg = str(e)
+                                    resp_txt = None
+                            if not resp_txt or not resp_txt.strip():
                                 resp_txt = random.choice(FALLBACKS_L)
+                        st.session_state['lj_last_err'] = _erro_dbg
 
                         # Avaliador
                         CRIT = {
